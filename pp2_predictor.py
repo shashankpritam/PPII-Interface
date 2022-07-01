@@ -44,7 +44,7 @@ logging.basicConfig(filename=LOG_FILENAME, level=logging.INFO)
 # If database search is required please run pp2_pred_for_database.py and provide the query PDB ID in input_database.txt
 # Let the input command be as sys.argv[1]. Also please provide the PDB files in database_folder for database look-up.
 # In case of  running the script with each time query required - remove sys.argv[1] and uncomment the below line.
-input_pdb_given = "1CKA" #sys.argv[1]  #input("Enter the four letter PDB code of Query Protein: ")
+input_pdb_given = sys.argv[1]  #input("Enter the four letter PDB code of Query Protein: ")
 pdbl = PDBList()
 print("Input PDB Given : "+input_pdb_given)
 #Provide Model of relevance here or define as input
@@ -137,10 +137,8 @@ hbond_files = glob.glob('data_hbond/*.txt')
 # an atom which acquires 4 character space including blank spaces. Please see http://cospi.iiserpune.ac.in/click/Contact/Contactus.jsp
 def click4all(input_pdb1, input_pdb2):
     cmd = './click '+str(input_pdb1[0])+' '+str(input_pdb2[0])+''+'>/dev/null 2>&1'
-    try:
-        os.system(cmd)
-    except (IndexError):
-        print(cmd)
+    os.system(cmd)
+
 
 # This function takes and input PDB ID from the template dataset and returns
 # the list of TRP involved in Hydrogen Bond with the PPII - Only for the 39 PDB in dataset
@@ -191,7 +189,7 @@ def mask_temp_Atoms (input_pdb, scda, scdr, suffix, save_path):
         save_path = "click_output/"+save_path
         Path(save_path).mkdir(parents=True, exist_ok=True)
 #        Use mkdir in case your system doesn't support save_path
-#        os.mkdir(save_path)
+#        os.mkdir(save_path, exist_ok=True)
         file_name = input_pdb[-8:-4]+str(suffix)+'.pdb'
         completeName = os.path.join(save_path, file_name)
         the_temp_trp_chain = (hbond_trp(input_pdb[-8:-4]))
@@ -471,7 +469,7 @@ def neighbour_search(structure):
 
 
 # Calls the above function.
-#neighbour_search(input_structure)
+neighbour_search(input_structure)
 # CLICK folder is set.
 files_4_click = glob.glob(current_working_dir+"/click_output/*/", recursive = True)
 for folders in files_4_click:
@@ -509,7 +507,7 @@ for alignments in predicted_alignments:
     alignments = alignments.split('_')
     if (alignments[0]).casefold() != (alignments[8][-4:]).casefold():
         list_of_unique_alignment.append(alignments)
-print(list_of_unique_alignment)
+
 
 
 # Code below replace the RMSD of CLICK with Total_RMSD = RMSD_TRP+RMSD_TRP_C+RMSD_TRP_O+RMSD_NBR_C
@@ -1054,7 +1052,7 @@ def decide_move(input_structure, iteration, move_number):
 
 # Monte Carlo Begins/Initializes here, comment the below line to just get the prediction site for ppii
 # and avoid Monte Carlo
-decide_move(simulation_pdb, 0, 0)
+#decide_move(simulation_pdb, 0, 0)
 
 
 
@@ -1068,7 +1066,7 @@ with open(result_filename, 'w+') as outfile:
                 for line in file:
                     outfile.write(line)
 command12 = "sed -i 's/END/ENDMDL/g' "+ result_filename
-os.system(command12)
+#os.system(command12)
 
 
 #Important Snippet
@@ -1080,9 +1078,9 @@ for i in all_dump:
 def remove_read_only_files(func, path, excinfo):
     os.chmod(path, stat.S_IWRITE)
     func(path)
-'''
+
 shutil.rmtree(current_working_dir+"/click_output", onerror=remove_read_only_files)
-Path(current_working_dir+"/click_output").mkdir(parents=True, exist_ok=True)'''
+Path(current_working_dir+"/click_output").mkdir(parents=True, exist_ok=True)
 
 
 #---------------------------------------------------------------End of The Line --------------------------------------------------------
