@@ -129,7 +129,7 @@ all_dataset_pdb = glob.glob('dataset/*.pdb')
 # This hydrogen bond info had 4 Angstrom as distance cut-off between the acceptor and the donor atoms.
 # The range for hydrogen bond angle was (90, 180).
 hbond_files = glob.glob('data_hbond/*.txt')
-the_hbond_file = glob.glob('data_hbond/*hbond_trp_all.txt')
+
 
 # This function runs CLICK alignment for each segment/pdb with all dataset pdb files
 # Before calling this function makes sure that the Parameters.inp files contains the desired atoms as representative_atoms.
@@ -142,7 +142,7 @@ def click4all(input_pdb1, input_pdb2):
 # This function takes and input PDB ID from the template dataset and returns
 # the list of TRP involved in Hydrogen Bond with the PPII - Only for the 39 PDB in dataset
 # See comment above hbond_files
-'''def hbond_trp(input_pdb):
+def hbond_trp(input_pdb):
     for file in hbond_files:
         if file.split('/')[1][0:4] == input_pdb:
             list_of_trp = []
@@ -154,25 +154,7 @@ def click4all(input_pdb1, input_pdb2):
                         trp_res_id = data[data.index("TRP")+1]
                         if trp_res_id not in list_of_trp:
                             list_of_trp.append(trp_res_id)
-    return list_of_trp'''
-
-def hbond_trp(input_pdb):
-    with open("data_hbond/hbond_trp_all.txt", "r") as infile:
-        lines = infile.readlines()
-        list_of_trp = []
-        for line in lines:
-            #print(line)
-            data = line.split(' ')
-            #print(data[3])
-            if input_pdb in line:
-                print(input_pdb, line)
-                if str("TRP") in data:
-                    #print(data[1], line)
-                    trp_res_id = data[data.index("TRP")+1]
-                    if trp_res_id not in list_of_trp:
-                        list_of_trp.append(trp_res_id)
     return list_of_trp
-
 
 
 
@@ -205,19 +187,19 @@ def mask_temp_Atoms (input_pdb, scda, scdr, suffix, save_path):
                     res_name = line[17:20].strip()
                     chain_id = line[21].strip()
                     res_seq = line[22:26].strip()
-                    #if res_seq in trp_list:
-                    if atm_name == "NE1" and res_name == "TRP":# and str(the_temp_chain) == str(chain_id):
-                        line = line.replace(atm_name, "AA ", 1)
-                        outfile.write(line)
-                    elif atm_name == "CA" and res_name == "TRP":#  and str(the_temp_chain) == str(chain_id):
-                        line = line.replace(atm_name, "BB", 1)
-                        outfile.write(line)
-                    elif atm_name == "CZ3" and res_name == "TRP":#  and str(the_temp_chain) == str(chain_id):
-                        line = line.replace(atm_name, "CC ", 1)
-                        outfile.write(line)
-                        #else:
-                            #outfile.write(line)
-                    elif atm_name == scda and res_name == scdr:# and str(the_temp_chain) == str(chain_id):
+                    if res_seq in trp_list:
+                        if atm_name == "NE1" and res_name == "TRP" and str(the_temp_chain) == str(chain_id):
+                            line = line.replace(atm_name, "AA ", 1)
+                            outfile.write(line)
+                        elif atm_name == "CA" and res_name == "TRP" and str(the_temp_chain) == str(chain_id):
+                            line = line.replace(atm_name, "BB", 1)
+                            outfile.write(line)
+                        elif atm_name == "CZ3" and res_name == "TRP" and str(the_temp_chain) == str(chain_id):
+                            line = line.replace(atm_name, "CC ", 1)
+                            outfile.write(line)
+                        else:
+                            outfile.write(line)
+                    elif atm_name == scda and res_name == scdr and str(the_temp_chain) == str(chain_id):
                         if len(str(atm_name)) == 1:
                             line = line.replace(line[13:15], "NX", 1)
                             outfile.write(line)
@@ -230,7 +212,7 @@ def mask_temp_Atoms (input_pdb, scda, scdr, suffix, save_path):
                         else:
                             line = line.replace(atm_name, " NX ", 1)
                             outfile.write(line)
-                    elif atm_name == "CB" and res_name == scdr:# and str(the_temp_chain) == str(chain_id):
+                    elif atm_name == "CB" and res_name == scdr and str(the_temp_chain) == str(chain_id):
                         line = line.replace(atm_name, "EE", 1)
                         outfile.write(line)
                     else:
@@ -256,8 +238,6 @@ def mask_query_Atoms (input_pdb, the_trp, the_nbr, the_nbr_dnr, suffix, save_pat
     file_name = input_pdb[:-4]+str(suffix)+'.pdb'
     completeName = os.path.join(save_path, file_name)
     query_structure = parser.get_structure(input_pdb[0:4], input_pdb)
-    the_dn_str = str()
-    the_nbr_residue_int = int()
     for model in query_structure:
         for chain in model:
             for residue in chain:
@@ -265,9 +245,7 @@ def mask_query_Atoms (input_pdb, the_trp, the_nbr, the_nbr_dnr, suffix, save_pat
                     the_trp_residue = residue
                 elif residue == the_nbr:
                     the_nbr_residue = residue
-                    the_nbr_residue_int = int(the_nbr_residue.get_id()[1])
                     the_dn = the_nbr_residue[the_nbr_dnr]
-                    the_dn_str = str(the_dn.get_id())
                     #the_ip2 = the_nbr_residue["CX"]
     with open(input_pdb, "r") as infile:
         with open(completeName, 'w+') as outfile:
@@ -284,20 +262,20 @@ def mask_query_Atoms (input_pdb, the_trp, the_nbr, the_nbr_dnr, suffix, save_pat
                      elif atm_name == "CZ3" and int(res_seq) == int(the_trp_residue.get_id()[1]):
                          line = line.replace(atm_name, "CC ", 1)
                          outfile.write(line)
-                     elif atm_name == the_dn_str and int(res_seq) == int(the_nbr_residue.get_id()[1]):
-                             if len(str(atm_name)) == 1:
-                                 line = line.replace(line[13:15], "NX", 1)
-                                 outfile.write(line)
-                             elif len(str(atm_name)) == 2:
-                                 line = line.replace(atm_name, "NX", 1)
-                                 outfile.write(line)
-                             elif len(str(atm_name)) == 3:
-                                 line = line.replace(atm_name, "NX ", 1)
-                                 outfile.write(line)
-                             else:
-                                 line = line.replace(atm_name, " NX ", 1)
-                                 outfile.write(line)
-                     elif atm_name == "CB" and int(res_seq) == the_nbr_residue_int:
+                     elif atm_name == the_dn.get_id() and int(res_seq) == int(the_nbr_residue.get_id()[1]):
+                         if len(str(atm_name)) == 1:
+                             line = line.replace(line[13:15], "NX", 1)
+                             outfile.write(line)
+                         elif len(str(atm_name)) == 2:
+                             line = line.replace(atm_name, "NX", 1)
+                             outfile.write(line)
+                         elif len(str(atm_name)) == 3:
+                             line = line.replace(atm_name, "NX ", 1)
+                             outfile.write(line)
+                         else:
+                             line = line.replace(atm_name, " NX ", 1)
+                             outfile.write(line)
+                     elif atm_name == "CB" and int(res_seq) == int(the_nbr_residue.get_id()[1]):
                          line = line.replace(atm_name, "EE", 1)
                          outfile.write(line)
                      else:
@@ -387,7 +365,7 @@ def carve(structure, input_model, input_chain, input_residue, n_atom, neighbour_
     pdb_id = structure.get_id()
     io.set_structure(structure)
 # Remember to put AtomSelect() or ChainSelect() in io.save, according to your need.
-    io.save(pdb_id+"__crvd__"+str(input_model.get_id())+input_chain.get_id()+str(input_residue.get_id()[1])+'_'+str(n_atom.get_parent().get_id()[1])+'_'+str(n_atom.get_id())+'.pdb')
+    io.save(pdb_id+"__crvd__"+str(input_model.get_id())+input_chain.get_id()+str(input_residue.get_id()[1])+'_'+str(n_atom.get_parent().get_id()[1])+'_'+str(n_atom.get_id())+'.pdb', ChainSelect())
 
 
 
@@ -410,7 +388,7 @@ def neighbour_search(structure):
                         the_NE1_atom = residue["NE1"]
 # The TRP info will be shown as console output.
                         print("Residue Tryptophan is present at : ", the_NE1_atom.get_full_id()[0], the_NE1_atom.get_full_id()[1], the_NE1_atom.get_full_id()[2], the_NE1_atom.get_full_id()[3][1])
-                        chain_atoms  = Bio.PDB.Selection.unfold_entities(model, 'A')
+                        chain_atoms  = Bio.PDB.Selection.unfold_entities(chain, 'A')
                         neighbourhood_search = Bio.PDB.NeighborSearch(chain_atoms)
                         neighbour_atoms = neighbourhood_search.search(the_NE1_atom.coord, neighbourhood_look_up_cut_off)
 # Saves all the neighbour atoms within cut off of neighbourhood_look_up_cut_off
@@ -476,7 +454,7 @@ def neighbour_search(structure):
 
 
 # Calls the above function.
-neighbour_search(input_structure)
+#neighbour_search(input_structure)
 # CLICK folder is set.
 files_4_click = glob.glob(current_working_dir+"/click_output/*/", recursive = True)
 for folders in files_4_click:
@@ -485,7 +463,7 @@ for folders in files_4_click:
         dataset_renamed_file = glob.glob(folders+'/*_rnmd_ds.pdb')
 # Within all subfolder of this CLICK folder a pair of query PDB and Template PDB is present for all (TRP, NBR_Atom) for all template PDBs
 # Calls the function to structurally align these two PDBs
-        click4all(renamed_pdb, dataset_renamed_file)
+        #click4all(renamed_pdb, dataset_renamed_file)
 
 # The atoms are masked with these "masks only"
 click_atoms = ["AA", "BB", "CC", "NX", "EE"]
@@ -514,7 +492,6 @@ for alignments in predicted_alignments:
     alignments = alignments.split('_')
     if (alignments[0]).casefold() != (alignments[8][-4:]).casefold():
         list_of_unique_alignment.append(alignments)
-
 
 
 
@@ -606,7 +583,6 @@ else:
     logging.info("No binding site found in the given query structure "+input_pdb)
     sys.exit("No binding site found in the given query structure")
 
-print(list_of_unique_alignment)
 # If an alignmnet has Total_RMSD >= float(2.5), that alignmnet should be rejected
 if float(best_alignment[-2]) >= float(25000):
     logging.info("No binding site found in the given query structure "+input_pdb)
@@ -1061,7 +1037,7 @@ def decide_move(input_structure, iteration, move_number):
 
 # Monte Carlo Begins/Initializes here, comment the below line to just get the prediction site for ppii
 # and avoid Monte Carlo
-#decide_move(simulation_pdb, 0, 0)
+decide_move(simulation_pdb, 0, 0)
 
 
 
@@ -1087,9 +1063,9 @@ for i in all_dump:
 def remove_read_only_files(func, path, excinfo):
     os.chmod(path, stat.S_IWRITE)
     func(path)
-
+'''
 shutil.rmtree(current_working_dir+"/click_output", onerror=remove_read_only_files)
-Path(current_working_dir+"/click_output").mkdir(parents=True, exist_ok=True)
+Path(current_working_dir+"/click_output").mkdir(parents=True, exist_ok=True)'''
 
 
 #---------------------------------------------------------------End of The Line --------------------------------------------------------
