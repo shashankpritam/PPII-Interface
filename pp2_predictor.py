@@ -44,7 +44,7 @@ logging.basicConfig(filename=LOG_FILENAME, level=logging.INFO)
 # If database search is required please run pp2_pred_for_database.py and provide the query PDB ID in input_database.txt
 # Let the input command be as sys.argv[1]. Also please provide the PDB files in database_folder for database look-up.
 # In case of  running the script with each time query required - remove sys.argv[1] and uncomment the below line.
-input_pdb_given = sys.argv[1]  #input("Enter the four letter PDB code of Query Protein: ")
+input_pdb_given = "1CKA" #sys.argv[1]  #input("Enter the four letter PDB code of Query Protein: ")
 pdbl = PDBList()
 print("Input PDB Given : "+input_pdb_given)
 #Provide Model of relevance here or define as input
@@ -139,7 +139,7 @@ def click4all(input_pdb1, input_pdb2):
     cmd = './click '+str(input_pdb1[0])+' '+str(input_pdb2[0])+''+'>/dev/null 2>&1'
     try:
         os.system(cmd)
-    except IndexError:
+    except (IndexError):
         print(cmd)
 
 # This function takes and input PDB ID from the template dataset and returns
@@ -509,7 +509,7 @@ for alignments in predicted_alignments:
     alignments = alignments.split('_')
     if (alignments[0]).casefold() != (alignments[8][-4:]).casefold():
         list_of_unique_alignment.append(alignments)
-
+print(list_of_unique_alignment)
 
 
 # Code below replace the RMSD of CLICK with Total_RMSD = RMSD_TRP+RMSD_TRP_C+RMSD_TRP_O+RMSD_NBR_C
