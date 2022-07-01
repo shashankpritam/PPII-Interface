@@ -1,0 +1,11 @@
+The number of matched atoms = 4
+RMSD = 0.85
+Structure Overlap = 80.00
+Number of " AA , BB , CC , NX , EE " atoms of 1cka__crvd__0A169_168_NE2__rnmd and 3FMA_rnmd_ds = 5 and 61
+MATCHED ATOM PAIRS BETWEEN:
+1cka__crvd__0A169_168_NE2__rnmd                                           3FMA_rnmd_ds
+Chain   ResNum         ResName    Atom        Chain     ResNum         ResName    Atom
+A        168           Q           EE           A         38           Q           EE 
+A        168           Q           NX           A         38           Q           NX 
+A        169           W           BB           A         39           W           BB 
+A        169           W           AA           A         39           W           AA 

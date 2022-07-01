@@ -137,12 +137,15 @@ hbond_files = glob.glob('data_hbond/*.txt')
 # an atom which acquires 4 character space including blank spaces. Please see http://cospi.iiserpune.ac.in/click/Contact/Contactus.jsp
 def click4all(input_pdb1, input_pdb2):
     cmd = './click '+str(input_pdb1[0])+' '+str(input_pdb2[0])+''+'>/dev/null 2>&1'
-    os.system(cmd)
+    try:
+        os.system(cmd)
+    except IndexError:
+        print(cmd)
 
 # This function takes and input PDB ID from the template dataset and returns
 # the list of TRP involved in Hydrogen Bond with the PPII - Only for the 39 PDB in dataset
 # See comment above hbond_files
-def hbond_trp(input_pdb):
+'''def hbond_trp(input_pdb):
     for file in hbond_files:
         if file.split('/')[1][0:4] == input_pdb:
             list_of_trp = []
@@ -154,6 +157,21 @@ def hbond_trp(input_pdb):
                         trp_res_id = data[data.index("TRP")+1]
                         if trp_res_id not in list_of_trp:
                             list_of_trp.append(trp_res_id)
+    return list_of_trp'''
+
+def hbond_trp(input_pdb):
+    with open("data_hbond/hbond_trp_all.txt", "r") as infile:
+        lines = infile.readlines()
+        list_of_trp = []
+        for line in lines:
+            data = line.split(' ')
+            if input_pdb.upper() in line:
+                trp_res_id = str(data[8])
+                chain_id = str(data[9][1])
+                #print(trp_res_id, chain_id)
+                res_chain_serial = [trp_res_id+chain_id]
+                if res_chain_serial not in list_of_trp:
+                    list_of_trp.append(res_chain_serial)
     return list_of_trp
 
 
@@ -176,9 +194,8 @@ def mask_temp_Atoms (input_pdb, scda, scdr, suffix, save_path):
 #        os.mkdir(save_path)
         file_name = input_pdb[-8:-4]+str(suffix)+'.pdb'
         completeName = os.path.join(save_path, file_name)
-        the_temp_chain = get_rec_chain(input_pdb[-8:-4])
+        the_temp_trp_chain = (hbond_trp(input_pdb[-8:-4]))
         trp_list = (hbond_trp(input_pdb[-8:-4]))
-
         with open(completeName, 'w+') as outfile:
             lines = infile.readlines()
             for line in lines:
@@ -187,19 +204,19 @@ def mask_temp_Atoms (input_pdb, scda, scdr, suffix, save_path):
                     res_name = line[17:20].strip()
                     chain_id = line[21].strip()
                     res_seq = line[22:26].strip()
-                    if res_seq in trp_list:
-                        if atm_name == "NE1" and res_name == "TRP" and str(the_temp_chain) == str(chain_id):
+                    if [res_seq+","+chain_id] in hbond_trp(input_pdb[-8:-4]):
+                        if atm_name == "NE1":
                             line = line.replace(atm_name, "AA ", 1)
                             outfile.write(line)
-                        elif atm_name == "CA" and res_name == "TRP" and str(the_temp_chain) == str(chain_id):
+                        elif atm_name == "CA":
                             line = line.replace(atm_name, "BB", 1)
                             outfile.write(line)
-                        elif atm_name == "CZ3" and res_name == "TRP" and str(the_temp_chain) == str(chain_id):
+                        elif atm_name == "CZ3":
                             line = line.replace(atm_name, "CC ", 1)
                             outfile.write(line)
                         else:
                             outfile.write(line)
-                    elif atm_name == scda and res_name == scdr and str(the_temp_chain) == str(chain_id):
+                    elif atm_name == scda and res_name == scdr:
                         if len(str(atm_name)) == 1:
                             line = line.replace(line[13:15], "NX", 1)
                             outfile.write(line)
@@ -212,7 +229,7 @@ def mask_temp_Atoms (input_pdb, scda, scdr, suffix, save_path):
                         else:
                             line = line.replace(atm_name, " NX ", 1)
                             outfile.write(line)
-                    elif atm_name == "CB" and res_name == scdr and str(the_temp_chain) == str(chain_id):
+                    elif atm_name == "CB" and res_name == scdr:
                         line = line.replace(atm_name, "EE", 1)
                         outfile.write(line)
                     else:
@@ -365,7 +382,7 @@ def carve(structure, input_model, input_chain, input_residue, n_atom, neighbour_
     pdb_id = structure.get_id()
     io.set_structure(structure)
 # Remember to put AtomSelect() or ChainSelect() in io.save, according to your need.
-    io.save(pdb_id+"__crvd__"+str(input_model.get_id())+input_chain.get_id()+str(input_residue.get_id()[1])+'_'+str(n_atom.get_parent().get_id()[1])+'_'+str(n_atom.get_id())+'.pdb', ChainSelect())
+    io.save(pdb_id+"__crvd__"+str(input_model.get_id())+input_chain.get_id()+str(input_residue.get_id()[1])+'_'+str(n_atom.get_parent().get_id()[1])+'_'+str(n_atom.get_id())+'.pdb')
 
 
 
@@ -388,8 +405,8 @@ def neighbour_search(structure):
                         the_NE1_atom = residue["NE1"]
 # The TRP info will be shown as console output.
                         print("Residue Tryptophan is present at : ", the_NE1_atom.get_full_id()[0], the_NE1_atom.get_full_id()[1], the_NE1_atom.get_full_id()[2], the_NE1_atom.get_full_id()[3][1])
-                        chain_atoms  = Bio.PDB.Selection.unfold_entities(chain, 'A')
-                        neighbourhood_search = Bio.PDB.NeighborSearch(chain_atoms)
+                        model_atoms  = Bio.PDB.Selection.unfold_entities(model, 'A')
+                        neighbourhood_search = Bio.PDB.NeighborSearch(model_atoms)
                         neighbour_atoms = neighbourhood_search.search(the_NE1_atom.coord, neighbourhood_look_up_cut_off)
 # Saves all the neighbour atoms within cut off of neighbourhood_look_up_cut_off
 # Now we are iterating through all the neighbour atoms so none of the neighbour atoms are left behind.
@@ -463,7 +480,7 @@ for folders in files_4_click:
         dataset_renamed_file = glob.glob(folders+'/*_rnmd_ds.pdb')
 # Within all subfolder of this CLICK folder a pair of query PDB and Template PDB is present for all (TRP, NBR_Atom) for all template PDBs
 # Calls the function to structurally align these two PDBs
-        #click4all(renamed_pdb, dataset_renamed_file)
+        click4all(renamed_pdb, dataset_renamed_file)
 
 # The atoms are masked with these "masks only"
 click_atoms = ["AA", "BB", "CC", "NX", "EE"]
