@@ -1,0 +1,48 @@
+#The reading of this file is based on a manner where the readfile is split by space and value = (parameter+2).strip()
+#Line positions are important, please don't add extra line before the MC_iteration line.
+#All distances are in Angstrom unless mentioned
+
+#Neighbourhood Search Parameters
+neighbourhood_look_up_cut_off = 10.5
+H_Bond_Cut_Off = 3.5
+
+
+#NHBS Hydrogen Bond Distance
+nhbs_h_bond_distance = 3.5
+
+
+#RHBS Constraints
+lower_bound_dist = 2.8
+upper_bound_dist = 4.2
+lower_bound_ang = 80
+upper_bound_ang = 180
+scale_distance_factor = 1
+
+
+#CS Clash Constraints
+clash_dist = 2.8
+MCMC_Scale = 50
+MCSC_Scale = 25
+SCSC_Scale = 10
+
+#PVWS Constraints
+PVWS_upper = 5.0
+PVWS_lower = clash_dist
+
+
+#Monte Carlo Parameters
+temperature = 400.0
+#float(673.15) In Kelvin
+
+gas_constant = 8.31
+#In J⋅K−1⋅mol−1
+
+translation_scale = 2
+#translation =  translation_scale*(±0.5)
+
+rotation_degrees = 1
+#± rotation_degrees°
+
+#Number of Time you want the Monte Carlo Iteration
+MC_Total_Accepted_Moves = 10
+MC_Total_Rejected_Moves = 250

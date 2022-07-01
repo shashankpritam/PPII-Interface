@@ -1,0 +1,11 @@
+This program takes a pdb structure as input and return possible binding site of the PPII Helix.
+
+Input - 4 letter PDB ID
+Output - In case the given structure does not contain a PPII binding site - You'll get notified.
+           In case the given structure does contain a PPII binding site - You'll get the structure with PPII bound to it on the "best possible orientation" at the predicted binding site of the PPII.
+
+@Shashank Pritam - (shashankpritam@gmail.com)
+License - LGPL-2.1
+
+
+For any help please contact through the provided email ID.
