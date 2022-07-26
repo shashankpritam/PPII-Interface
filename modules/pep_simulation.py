@@ -22,10 +22,18 @@ from Bio.PDB import PDBIO, Select, PDBList
 from Bio import BiopythonWarning
 warnings.simplefilter('ignore', BiopythonWarning)
 
+parser = Bio.PDB.PDBParser(QUIET=True)
+pdbl = PDBList()
+io = PDBIO()
+
 
 # The parameter file param.txt file loads here, we get the current working directory, and the biopython parser is loaded.
 # And log file sets-up
 parameter_file = open("param.txt").read().split('\n')
+from modules.energy_nhbs import NHBS
+from modules.energy_rhbs import RHBS
+from modules.energy_pvws import PVWS
+from modules.energy_clash_score import CS
 
 # Calculates the total energy function
 def total_energy(simulation_pdb):

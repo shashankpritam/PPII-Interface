@@ -11,6 +11,7 @@ parser = Bio.PDB.PDBParser(QUIET=True)
 pdbl = PDBList()
 io = PDBIO()
 test_pdb = glob.glob('test_pdb/*.pdb')
+Main_Chain_Atoms = ["C", "N", "O", "CA"]
 # The below function takes structure, model, chain, residue, n_atom, neighbour_atoms as input and carves that segment
 # which is in the neighbourhood within some set cut-off (read param.txt) of NE1 of TRP
 # To carve pdb make else condition return a value of 0. If it is 1 then it selects every thing.
@@ -37,7 +38,6 @@ class PeptideSelect(Select):
         else:
             return 0
 
-Main_Chain_Atoms = ["C", "N", "O", "CA"]
 class MCAtomSelect(Select):
     def accept_atom(self, atom):
         if atom.get_id() in Main_Chain_Atoms:

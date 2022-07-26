@@ -1,6 +1,8 @@
 # This function takes a pdb filename with complete path, it is 4 letter ID and a Chain ID as as input.
 # This function then returns a new file in the parent directory with _4sim as suffix identifier.
 # That PDB file should contain the pdb id provided with only the chain which was provided as an input parameter.
+import os
+current_working_dir = os.getcwd()
 def save_pdb (filename, pdb_id, chain):
     with open(filename, "r") as infile:
         completeName = current_working_dir+"/"+pdb_id+'_4sim.pdb'

@@ -75,7 +75,6 @@ except:
 
 # List of 39 Dataset PDB IDs - Templates and their receptor chain and peptide (ppii) chain ID.
 pdb_id = []
-receptor_chain = []
 ppii_chain = []
 with open("pdb_chains.txt", "r") as chain_info:
     next(chain_info)
@@ -83,7 +82,6 @@ with open("pdb_chains.txt", "r") as chain_info:
     for line in chain_info:
         count += 1
         pdb_id.append(line.split()[0])
-        receptor_chain.append(line.split()[1])
         ppii_chain.append(line.split()[2])
 
 # A function to get peptide chain of a PDB from the template dataset containing 39 PDBs
@@ -92,12 +90,8 @@ def get_pep_chain(input_pdb):
     pdb_id_index = pdb_id.index(pdb_id_upper)
     input_peptide_chain = ppii_chain[pdb_id_index]
     return input_peptide_chain
-# A function to get receptor chain of a PDB from the template dataset containing 39 PDBs
-def get_rec_chain(input_pdb):
-    pdb_id_upper = (input_pdb.upper())
-    pdb_id_index = pdb_id.index(pdb_id_upper)
-    input_receptor_chain = receptor_chain[pdb_id_index]
-    return input_receptor_chain
+
+
 
 
 # This information is needed to decide acceptor, donor, acceptor antecedent atoms for hydrogen bond inference.
@@ -398,7 +392,7 @@ os.remove(command8)
 simulation_pdb = parser.get_structure(input_receptor_chain_given[0:4], input_receptor_chain_given+"__"+input_peptide_chain_given+"__4sim.pdb")
 # Monte Carlo Begins/Initializes here, comment the below line to just get the prediction site for ppii
 # and avoid Monte Carlo
-decide_move(simulation_pdb, 0, 0)
+#decide_move(simulation_pdb, 0, 0)
 
 
 ##To create a single multi-model .pdb file - out_combined.pdb

@@ -1,3 +1,35 @@
+import Bio.PDB
+parameter_file = open("param.txt").read().split('\n')
+Main_Chain_Atoms = ["C", "N", "O", "CA"]
+# This information is needed to decide acceptor, donor, acceptor antecedent atoms for hydrogen bond inference.
+# Loads file with list of acceptors, donors and acceptor antecedents, create dictionary for acceptor_antecedent
+
+# File with list of acceptors
+acceptor_file = open("H_bond_Acceptor_List").read().split('\n')
+acceptor_file = filter(None,acceptor_file)
+acceptor = []
+acceptor_list = []
+for i in acceptor_file:
+    tmp=i.split('\t')
+    acceptor.append(tmp[0]+':'+tmp[1])
+    acceptor_list.append(tmp[-1])
+
+# File with list of donors
+donor_file = open("H_bond_Donor_List").read().split('\n')
+donor_file = filter(None,donor_file)
+donor = []
+for i in donor_file:
+    donor.append(i.replace('\t',':'))
+
+# Acceptor Antecedent Dictionary
+acceptor_antecedent = {}
+for atom in acceptor:
+    acceptor_antecedent[atom] = acceptor_list[acceptor.index(atom)]
+
+# A function to get the acceptor antecedent atom of an acceptor atom involved in hydrogen bond.
+def aa_atom(atom):
+    print(acceptor_list[acceptor.index(atom)])
+
 # Calculates the energy function called Clash Scores
 # CS Clash Constraints
 clash_dist = float(parameter_file[22].split( )[2])

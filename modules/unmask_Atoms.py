@@ -1,3 +1,4 @@
+from pathlib import Path
 # This function "undoes" what masking function above does.
 # That is after the CLICK alignments all the desired files will have "normal"/unmasked file n_atom_residue
 # with _new as suffix for identifier.
