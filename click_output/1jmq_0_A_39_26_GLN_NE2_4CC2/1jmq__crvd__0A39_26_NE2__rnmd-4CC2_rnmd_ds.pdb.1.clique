@@ -1,0 +1,10 @@
+The number of matched atoms = 3
+RMSD = 0.18
+Structure Overlap = 60.00
+Number of " AA , BB , CC , NX , EE " atoms of 1jmq__crvd__0A39_26_NE2__rnmd and 4CC2_rnmd_ds = 5 and 11
+MATCHED ATOM PAIRS BETWEEN:
+1jmq__crvd__0A39_26_NE2__rnmd                                           4CC2_rnmd_ds
+Chain   ResNum         ResName    Atom        Chain     ResNum         ResName    Atom
+A         39           W           BB           A       1554           W           BB 
+A         39           W           AA           A       1554           W           AA 
+A         39           W           CC           A       1554           W           CC 

@@ -1,0 +1,11 @@
+The number of matched atoms = 4
+RMSD = 0.72
+Structure Overlap = 80.00
+Number of " AA , BB , CC , NX , EE " atoms of 1GBQ__crvd__0A36_12_OG1__rnmd and 4LNP_rnmd_ds = 5 and 7
+MATCHED ATOM PAIRS BETWEEN:
+1GBQ__crvd__0A36_12_OG1__rnmd                                           4LNP_rnmd_ds
+Chain   ResNum         ResName    Atom        Chain     ResNum         ResName    Atom
+A         12           T           NX           A        808           T           NX 
+A         36           W           BB           A        830           W           BB 
+A         36           W           AA           A        830           W           AA 
+A         36           W           CC           A        830           W           CC 

@@ -1,0 +1,11 @@
+The number of matched atoms = 4
+RMSD = 0.65
+Structure Overlap = 80.00
+Number of " AA , BB , CC , NX , EE " atoms of 1CKA__crvd__0A170_189_NZ__rnmd and 2VWF_rnmd_ds = 5 and 7
+MATCHED ATOM PAIRS BETWEEN:
+1CKA__crvd__0A170_189_NZ__rnmd                                           2VWF_rnmd_ds
+Chain   ResNum         ResName    Atom        Chain     ResNum         ResName    Atom
+A        170           W           BB           A         35           W           BB 
+A        170           W           AA           A         35           W           AA 
+A        170           W           CC           A         35           W           CC 
+A        189           K           NX           B         11           K           NX 

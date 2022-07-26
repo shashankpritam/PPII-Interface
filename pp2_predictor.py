@@ -29,6 +29,16 @@ from Bio.PDB import PDBIO, Select, PDBList
 from Bio import BiopythonWarning
 warnings.simplefilter('ignore', BiopythonWarning)
 
+from modules.hydrogen_bonds import hbond_trp
+from modules.mask_temp_Atoms import mask_temp_Atoms
+from modules.mask_query_Atoms import mask_query_Atoms
+from modules.unmask_Atoms import unmask_Atoms_save
+from modules.save_pdb import save_pdb
+from modules.carve_pdb import carve
+from modules.neighhbor_look_up_4_pair_of_res import neighbour_search
+
+
+
 # The parameter file param.txt file loads here, we get the current working directory, and the biopython parser is loaded.
 # And log file sets-up
 parameter_file = open("param.txt").read().split('\n')
@@ -119,9 +129,6 @@ def aa_atom(atom):
     print(acceptor_list[acceptor.index(atom)])
 
 
-# donor_dict is a dictionary which contains all the side donor atoms from their respective residues in a dictionary format.
-# The information of donor_dict is taken from the Modeller software.
-donor_dict = [('ARG', 'NE'), ('ARG', 'NH1'), ('ARG', 'NH2'), ('ASN', 'ND2'), ('ASX', 'ND2'), ('CYS', 'SG'), ('GLN', 'NE2'), ('GLX', 'NE2'), ('HIS', 'ND1'), ('HSE', 'NE2'), ('HSP', 'ND1'), ('HSP', 'NE2'), ('LYS', 'NZ'), ('SER', 'OG'), ('THR', 'OG1'), ('TRP', 'NE1'), ('TYR', 'OH')]
 
 
 # Subdirectories containing the template PDB files and the hydrogen bond info.
@@ -139,337 +146,7 @@ def click4all(input_pdb1, input_pdb2):
     cmd = './click '+str(input_pdb1[0])+' '+str(input_pdb2[0])+''+'>/dev/null 2>&1'
     os.system(cmd)
 
-
-# This function takes and input PDB ID from the template dataset and returns
-# the list of TRP involved in Hydrogen Bond with the PPII - Only for the 39 PDB in dataset
-# See comment above hbond_files
-'''def hbond_trp(input_pdb):
-    for file in hbond_files:
-        if file.split('/')[1][0:4] == input_pdb:
-            list_of_trp = []
-            with open(file, "r") as infile:
-                lines = infile.readlines()
-                for line in lines:
-                    data = line.split(' ')
-                    if "TRP" in line:
-                        trp_res_id = data[data.index("TRP")+1]
-                        if trp_res_id not in list_of_trp:
-                            list_of_trp.append(trp_res_id)
-    return list_of_trp'''
-
-def hbond_trp(input_pdb):
-    with open("data_hbond/hbond_trp_all.txt", "r") as infile:
-        lines = infile.readlines()
-        list_of_trp = []
-        for line in lines:
-            data = line.split(' ')
-            if input_pdb.upper() in line:
-                trp_res_id = str(data[8])
-                chain_id = str(data[9][1])
-                #print(trp_res_id, chain_id)
-                res_chain_serial = [trp_res_id+chain_id]
-                if res_chain_serial not in list_of_trp:
-                    list_of_trp.append(res_chain_serial)
-    return list_of_trp
-
-
-
-# This function takes input of template pdb id and an side chain donor atom (scda), side chain donor residue (scdr) of the scda
-# and the suffix which acts as identifier as template file. The last parameter save_path is path where the ouput file is
-# supposed to be saved.
-# This function replaces the scda of scdr with NX and CB atom of scdr as EE.
-# This function also replaces the NE1, CA and CZ3 of the Tryptophan residues (TRPs) from the trp_list acquired from hbond_trp
-# as AA, BB and CC respectively.
-# After replacing the atom names this functions saves the new PDB as per provided inputs.
-# Suffix is used for renaming the output file.
-# SCDA = Side Chain Donor ATOM
-# SCDR = Side Chain Donor RESIDUE
-def mask_temp_Atoms (input_pdb, scda, scdr, suffix, save_path):
-    with open(input_pdb, "r") as infile:
-        save_path = "click_output/"+save_path
-        Path(save_path).mkdir(parents=True, exist_ok=True)
-#        Use mkdir in case your system doesn't support save_path
-#        os.mkdir(save_path, exist_ok=True)
-        file_name = input_pdb[-8:-4]+str(suffix)+'.pdb'
-        completeName = os.path.join(save_path, file_name)
-        the_temp_trp_chain = (hbond_trp(input_pdb[-8:-4]))
-        trp_list = (hbond_trp(input_pdb[-8:-4]))
-        with open(completeName, 'w+') as outfile:
-            lines = infile.readlines()
-            for line in lines:
-                if line.startswith("ATOM"):
-                    atm_name = line[12:16].strip()
-                    res_name = line[17:20].strip()
-                    chain_id = line[21].strip()
-                    res_seq = line[22:26].strip()
-                    if [res_seq+","+chain_id] in hbond_trp(input_pdb[-8:-4]):
-                        if atm_name == "NE1":
-                            line = line.replace(atm_name, "AA ", 1)
-                            outfile.write(line)
-                        elif atm_name == "CA":
-                            line = line.replace(atm_name, "BB", 1)
-                            outfile.write(line)
-                        elif atm_name == "CZ3":
-                            line = line.replace(atm_name, "CC ", 1)
-                            outfile.write(line)
-                        else:
-                            outfile.write(line)
-                    elif atm_name == scda and res_name == scdr:
-                        if len(str(atm_name)) == 1:
-                            line = line.replace(line[13:15], "NX", 1)
-                            outfile.write(line)
-                        elif len(str(atm_name)) == 2:
-                            line = line.replace(atm_name, "NX", 1)
-                            outfile.write(line)
-                        elif len(str(atm_name)) == 3:
-                            line = line.replace(atm_name, "NX ", 1)
-                            outfile.write(line)
-                        else:
-                            line = line.replace(atm_name, " NX ", 1)
-                            outfile.write(line)
-                    elif atm_name == "CB" and res_name == scdr:
-                        line = line.replace(atm_name, "EE", 1)
-                        outfile.write(line)
-                    else:
-                        outfile.write(line)
-
-
-# This function takes input of query pdb id and an Tryptophan residue as Biopython Residue Object - the_trp
-# Other input parameters are - the_nbr; which the scdr but as biopython RESIDUE object and the_nbr_dnr -
-# which the scda but as biopython ATOM object
-# The suffix which acts as identifier as query file. The last parameter save_path is path where the ouput file is
-# supposed to be saved.
-# This function replaces the the_nbr with NX and CB atom of the_nbr_dnr as EE.
-# This function also replaces the NE1, CA and CZ3 of the Tryptophan residues (TRPs) from the_trp
-# as AA, BB and CC respectively.
-# After replacing the atom names this functions saves the new PDB as per provided inputs.
-# Suffix is used for renaming the output file.
-# SCDA = Side Chain Donor ATOM
-# SCDR = Side Chain Donor RESIDUE
-def mask_query_Atoms (input_pdb, the_trp, the_nbr, the_nbr_dnr, suffix, save_path):
-    save_path = "click_output/"+save_path
-    Path(save_path).mkdir(parents=True, exist_ok=True)
-#        os.mkdir(save_path)
-    file_name = input_pdb[:-4]+str(suffix)+'.pdb'
-    completeName = os.path.join(save_path, file_name)
-    query_structure = parser.get_structure(input_pdb[0:4], input_pdb)
-    for model in query_structure:
-        for chain in model:
-            for residue in chain:
-                if residue == the_trp:
-                    the_trp_residue = residue
-                elif residue == the_nbr:
-                    the_nbr_residue = residue
-                    the_dn = the_nbr_residue[the_nbr_dnr]
-                    #the_ip2 = the_nbr_residue["CX"]
-    with open(input_pdb, "r") as infile:
-        with open(completeName, 'w+') as outfile:
-             for line in infile:
-                 if line.startswith("ATOM"):
-                     atm_name = line[12:16].strip()
-                     res_seq = line[22:26].strip()
-                     if atm_name == "NE1" and int(res_seq) == int(the_trp_residue.get_id()[1]):
-                         line = line.replace(atm_name, "AA ", 1)
-                         outfile.write(line)
-                     elif atm_name == "CA" and int(res_seq) == int(the_trp_residue.get_id()[1]):
-                         line = line.replace(atm_name, "BB", 1)
-                         outfile.write(line)
-                     elif atm_name == "CZ3" and int(res_seq) == int(the_trp_residue.get_id()[1]):
-                         line = line.replace(atm_name, "CC ", 1)
-                         outfile.write(line)
-                     elif atm_name == the_dn.get_id() and int(res_seq) == int(the_nbr_residue.get_id()[1]):
-                         if len(str(atm_name)) == 1:
-                             line = line.replace(line[13:15], "NX", 1)
-                             outfile.write(line)
-                         elif len(str(atm_name)) == 2:
-                             line = line.replace(atm_name, "NX", 1)
-                             outfile.write(line)
-                         elif len(str(atm_name)) == 3:
-                             line = line.replace(atm_name, "NX ", 1)
-                             outfile.write(line)
-                         else:
-                             line = line.replace(atm_name, " NX ", 1)
-                             outfile.write(line)
-                     elif atm_name == "CB" and int(res_seq) == int(the_nbr_residue.get_id()[1]):
-                         line = line.replace(atm_name, "EE", 1)
-                         outfile.write(line)
-                     else:
-                         outfile.write(line)
-                 else:
-                     outfile.write(line)
-
-# This function "undoes" what masking function above does.
-# That is after the CLICK alignments all the desired files will have "normal"/unmasked file n_atom_residue
-# with _new as suffix for identifier.
-def unmask_Atoms_save (input_pdb, input_chain):
-    with open(input_pdb, "r") as infile:
-        output_file = input_pdb[:-4]+"_new.pdb"
-        file_path = str(Path(input_pdb).resolve())
-        the_dn = (file_path.split('/')[-2].split('_')[-2])
-        with open(output_file, 'w+') as outfile:
-             for line in infile:
-                 if line.startswith("ATOM"):
-                     atm_name = line[12:16].strip()
-                     chain_id = line[21].strip()
-                     if str(input_chain) == str(chain_id):
-                         if atm_name == "AA":
-                             line = line.replace(line[13:16], "NE1", 1)
-                             outfile.write(line)
-                         elif atm_name == "BB":
-                             line = line.replace(line[13:15], "CA", 1)
-                             outfile.write(line)
-                         elif atm_name == "CC":
-                             line = line.replace(line[13:16], "CZ3", 1)
-                             outfile.write(line)
-                         elif atm_name == "NX":
-                             if len(str(the_dn)) == 1:
-                                 line = line.replace(line[13:14], the_dn, 1)
-                                 outfile.write(line)
-                             elif len(str(the_dn)) == 2:
-                                 line = line.replace(line[13:15], the_dn, 1)
-                                 outfile.write(line)
-                             elif len(str(the_dn)) == 3:
-                                 line = line.replace(line[13:16], the_dn, 1)
-                                 outfile.write(line)
-                             else:
-                                 line = line.replace(line[13:16], the_dn, 1)
-                                 outfile.write(line)
-                         elif atm_name == "EE":
-                             line = line.replace(line[13:15], "CB", 1)
-                             outfile.write(line)
-                         else:
-                             outfile.write(line)
-
-# This function takes a pdb filename with complete path, it is 4 letter ID and a Chain ID as as input.
-# This function then returns a new file in the parent directory with _4sim as suffix identifier.
-# That PDB file should contain the pdb id provided with only the chain which was provided as an input parameter.
-def save_pdb (filename, pdb_id, chain):
-    with open(filename, "r") as infile:
-        completeName = current_working_dir+"/"+pdb_id+'_4sim.pdb'
-        with open(completeName, 'w+') as outfile:
-            lines = infile.readlines()
-            for line in lines:
-                if line.startswith("ATOM"):
-                    chain_name = line[21].strip()
-                    if str(chain_name) == str(chain):
-                        outfile.write(line)
-
-
-
-# The below function takes structure, model, chain, residue, n_atom, neighbour_atoms as input and carves that segment
-# which is in the neighbourhood within some set cut-off (read param.txt) of NE1 of TRP
-# To carve pdb make else condition return a value of 0. If it is 1 then it selects every thing.
-# Simply put - You are getting a segment of a chain from the given structure which contains TRP and its neighbours within some
-# set cut-off -neighbourhood_look_up_cut_off.
-# Now each segment will have at least one another donor atom. These atoms are used for Click to find binding site.
-# If Commented out; only predicted chain is taken considered for Click and no fragmentation of the PDB chain is taking place.
-def carve(structure, input_model, input_chain, input_residue, n_atom, neighbour_atoms):
-#    class AtomSelect(Select):
-#        def accept_atom(self, atom):
-#            if atom in neighbour_atoms:
-#                return 1
-#            else:
-#                return 1
-# Class which selects only provided chain and none other
-    class ChainSelect(Select):
-        def accept_chain(self, chain):
-            if str(chain.get_id()) == str(input_chain.get_id()):
-                return 1
-            else:
-                return 0
-    pdb_id = structure.get_id()
-    io.set_structure(structure)
-# Remember to put AtomSelect() or ChainSelect() in io.save, according to your need.
-    io.save(pdb_id+"__crvd__"+str(input_model.get_id())+input_chain.get_id()+str(input_residue.get_id()[1])+'_'+str(n_atom.get_parent().get_id()[1])+'_'+str(n_atom.get_id())+'.pdb')
-
-
-
-# This functions below - neighbour_search looks for a side chain donor atom for hydrogen bond which are within 12 Angstrom from any (TRP, NE1)
-# and considers only those which are not inter-hydrogen bound within the same chain.
-# Please do not set/change the parameters here.
-# Input is simply a biopython structure Object
-# Neighbourhood Search Parameters
-neighbourhood_look_up_cut_off = float(parameter_file[5].split( )[2])
-H_Bond_Cut_Off = float(parameter_file[6].split( )[2])
-def neighbour_search(structure):
-    for model in structure:
-        if model.get_id() == int(0):
-            for chain in model:
-                for residue in chain:
-# Looks if in the given structure if TRP is present on any postion (iterating through model and chain)
-# If you want to provide Model ID for your query (NMR structure) change the line model.get_id() == int(0):
-# as per your requirements. Else deault model is set to 0.
-                    if residue.get_resname() == 'TRP':
-                        the_NE1_atom = residue["NE1"]
-# The TRP info will be shown as console output.
-                        print("Residue Tryptophan is present at : ", the_NE1_atom.get_full_id()[0], the_NE1_atom.get_full_id()[1], the_NE1_atom.get_full_id()[2], the_NE1_atom.get_full_id()[3][1])
-                        model_atoms  = Bio.PDB.Selection.unfold_entities(model, 'A')
-                        neighbourhood_search = Bio.PDB.NeighborSearch(model_atoms)
-                        neighbour_atoms = neighbourhood_search.search(the_NE1_atom.coord, neighbourhood_look_up_cut_off)
-# Saves all the neighbour atoms within cut off of neighbourhood_look_up_cut_off
-# Now we are iterating through all the neighbour atoms so none of the neighbour atoms are left behind.
-                        for n_atom in neighbour_atoms:
-                            rejection_list = []
-                            atom_dic = (n_atom.get_parent().get_resname(), n_atom.get_id())
-                            if (n_atom != the_NE1_atom) and (atom_dic in donor_dict):
-                                #print(the_NE1_atom.get_full_id(), n_atom.get_full_id())
-#                                n_res_atoms  = Bio.PDB.Selection.unfold_entities(n_atom.get_parent(), 'A')
-# This checks if for any neighbour atom from the same chain, within 12 Angstrom except self, is side chain donor atom
-# and they don't have any internal hydrogen bond (if it is then put on the rejection_list).
-#                                iplus2 = (n_atom.get_serial_number())+2
-                                internal_look_up = neighbourhood_search.search(n_atom.coord, H_Bond_Cut_Off)
-# We are once again already iterating through internal_atoms. This is important - from the same residue - two scda might be considered!!
-                                for internal_atoms in internal_look_up:
-                                    if (internal_atoms != n_atom):
-                                        n_atom_residue = ((n_atom.get_parent().get_resname()))
-                                        internal_look_up_residue = ((internal_atoms.get_parent().get_resname()))
-                                        n_atom_id = (n_atom.get_name()+":"+n_atom_residue)
-                                        internal_look_up_residue_id = (internal_atoms.get_name()+":"+internal_look_up_residue)
-                                        if (n_atom_id in donor and internal_look_up_residue_id in acceptor):
-                                            i_aa_atom = internal_atoms.get_parent()[acceptor_antecedent[internal_look_up_residue_id]]
-                                            n_vector = n_atom.get_vector()
-                                            i_vector = internal_atoms.get_vector()
-                                            i_aa_vector = i_aa_atom.get_vector()
-                                            i_angle_hbond = (calc_angle(n_vector, i_vector, i_aa_vector))
-                                            if np.degrees(i_angle_hbond) >90.0 and np.degrees(i_angle_hbond)<180:
-                                                rejection_list.append(n_atom)
-                                        elif (internal_look_up_residue_id in donor and n_atom_id in acceptor):
-                                            n_aa_atom = n_atom.get_parent()[acceptor_antecedent[n_atom_id]]
-                                            n_vector = n_atom.get_vector()
-                                            i_vector = internal_atoms.get_vector()
-                                            n_aa_vector = n_aa_atom.get_vector()
-                                            n_angle_hbond = (calc_angle(i_vector, n_vector, n_aa_vector))
-                                            if np.degrees(n_angle_hbond) >90.0 and np.degrees(n_angle_hbond)<180:
-                                                rejection_list.append(n_atom)
-                                        else:
-                                            continue
-# The internal hydrogen bond look up ends here. All the internally hydrogen bonded side chain dnor atoms are rejected.
-                                if (n_atom not in rejection_list) and (n_atom != the_NE1_atom) and (atom_dic in donor_dict):
-# Change this only if you need to. One representative atom from another side chain donor
-#                                    CX = str("CB")
-# Currently the CX has been set to CB atom. it could also be the iplus2 atom. Uncomment as per your need.
-#                                        for na in n_res_atoms:
-#                                            if (na.get_serial_number()) == iplus2:
-#                                                CX = na.get_id()
-#                                            else:
-#                                                print("The Residue lacks i+2th Atom")
-#                                    representative_atom = (n_atom.get_id())
-# Pair of TRP - NE1 and Side Chain donor atoms are confirmed as the_NE1_atom and representative_atom.
-# Carves the segment of query pdb id for CLICK alignment.
-                                    carve(structure, model, chain, residue, n_atom, neighbour_atoms)
-                                    for dataset_file in all_dataset_pdb:
-                                        # Very important - format of pdb file is dataset/XXYY.pdb, hence int(16)
-                                        if len(dataset_file) == int(16): #and (dataset_file == "dataset/1gbq.pdb"):
-# Saves everything within click_output folder for CLICK alignment
-                                            the_path = str(n_atom.get_full_id()[0])+"_"+str(n_atom.get_full_id()[1])+"_"+str(n_atom.get_full_id()[2])+"_"+str(the_NE1_atom.get_full_id()[3][1])+"_"+str(n_atom.get_full_id()[3][1])+"_"+str(n_atom.get_parent().get_resname()+"_"+n_atom.get_id()+"_"+str(dataset_file[-8:-4]))
-# Mask Template PDB atoms for CLICK alignment
-                                            mask_temp_Atoms(dataset_file, str(n_atom.get_id()), str(n_atom.get_parent().get_resname()), "_rnmd_ds", the_path)
-# Mask Query Segment atoms which was "Carved" for CLICK alignment
-                                            mask_query_Atoms (structure.get_id()+"__crvd__"+str(model.get_id())+chain.get_id()+str(residue.get_id()[1])+'_'+str(n_atom.get_parent().get_id()[1])+'_'+str(n_atom.get_id())+'.pdb', residue, n_atom.get_parent(), n_atom.get_id(), '__rnmd', the_path)
-
-
-# Calls the above function.
-neighbour_search(input_structure)
+#neighbour_search(input_structure)
 # CLICK folder is set.
 files_4_click = glob.glob(current_working_dir+"/click_output/*/", recursive = True)
 for folders in files_4_click:
@@ -478,7 +155,7 @@ for folders in files_4_click:
         dataset_renamed_file = glob.glob(folders+'/*_rnmd_ds.pdb')
 # Within all subfolder of this CLICK folder a pair of query PDB and Template PDB is present for all (TRP, NBR_Atom) for all template PDBs
 # Calls the function to structurally align these two PDBs
-        click4all(renamed_pdb, dataset_renamed_file)
+        #click4all(renamed_pdb, dataset_renamed_file)
 
 # The atoms are masked with these "masks only"
 click_atoms = ["AA", "BB", "CC", "NX", "EE"]
@@ -498,9 +175,11 @@ for folders in files_4_click:
 # Which ones are the "passable" alignments
             if Matched_Atoms == 5:#RMSD <= 0.6 and
                 predicted_alignments.append(carved_frag_info+"_"+str(RMSD)+"_"+str(Structure_Overlap))
+                print(carved_frag_info)
 '''            elif Matched_Atoms == 5:#RMSD <= 1.0 and
                 predicted_alignments.append(carved_frag_info+"_"+str(RMSD)+"_"+str(Structure_Overlap))'''
 
+print(predicted_alignments)
 # Among these passable alignments, remove the trivial self alignments. (eg - 1CKA vs 1CKA)
 list_of_unique_alignment = []
 for alignments in predicted_alignments:
@@ -662,32 +341,7 @@ input_peptide_structure = run_sim_sim(input_pdb_given)[2]
 #print(input_receptor_chain_given, input_receptor_chain, input_peptide_chain_given, input_peptide_chain)
 
 
-class ReceptorSelect(Select):
-    def accept_model(self, model):
-        if model.get_id() == int(input_receptor_model):
-            return 1
-        else:
-            return 0
-    def accept_residue(self, residue):
-        if residue.id[0] == " ":
-            return 1
-        else:
-            return 0
 
-class PeptideSelect(Select):
-    def accept_residue(self, residue):
-        if residue.id[0] == " ":
-            return 1
-        else:
-            return 0
-
-Main_Chain_Atoms = ["C", "N", "O", "CA"]
-class MCAtomSelect(Select):
-    def accept_atom(self, atom):
-        if atom.get_id() in Main_Chain_Atoms:
-            return 1
-        else:
-            return 0
 
 
 #io.set_structure(input_receptor_structure)
@@ -1059,13 +713,13 @@ def decide_move(input_structure, iteration, move_number):
 
 
 ##To create a single multi-model .pdb file - out_combined.pdb
-result_filename = current_working_dir+"/"+str(input_receptor_chain_given)+str("_sim_result.pdb")
+'''result_filename = current_working_dir+"/"+str(input_receptor_chain_given)+str("_sim_result.pdb")
 with open(result_filename, 'w+') as outfile:
     for files in glob.glob('pdb_traj_saved?.pdb'):
         with open(files) as file:
                 for line in file:
                     outfile.write(line)
-command12 = "sed -i 's/END/ENDMDL/g' "+ result_filename
+command12 = "sed -i 's/END/ENDMDL/g' "+ result_filename'''
 #os.system(command12)
 
 
@@ -1079,8 +733,8 @@ def remove_read_only_files(func, path, excinfo):
     os.chmod(path, stat.S_IWRITE)
     func(path)
 
-shutil.rmtree(current_working_dir+"/click_output", onerror=remove_read_only_files)
-Path(current_working_dir+"/click_output").mkdir(parents=True, exist_ok=True)
+#shutil.rmtree(current_working_dir+"/click_output", onerror=remove_read_only_files)
+#Path(current_working_dir+"/click_output").mkdir(parents=True, exist_ok=True)
 
 
 #---------------------------------------------------------------End of The Line --------------------------------------------------------
