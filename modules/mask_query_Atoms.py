@@ -1,3 +1,7 @@
+# Author - @Shashank Pritam - (shashankpritam@gmail.com).
+# License - LGPL
+# Required Modules -- biopython
+# Working Python Version --  3.8.10 and tested system -- WSL Ubuntu 20.4
 import os
 import Bio.PDB
 from pathlib import Path
@@ -68,3 +72,6 @@ def mask_query_Atoms (input_pdb, the_trp, the_nbr, the_nbr_dnr, suffix, save_pat
                          outfile.write(line)
                  else:
                      outfile.write(line)
+
+# Test case - Uncomment below line
+#print(test_pdb)

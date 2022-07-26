@@ -1,3 +1,7 @@
+# Author - @Shashank Pritam - (shashankpritam@gmail.com).
+# License - LGPL
+# Required Modules -- biopython
+# Working Python Version --  3.8.10 and tested system -- WSL Ubuntu 20.4
 import os
 from pathlib import Path
 from modules.hydrogen_bonds import hbond_trp
@@ -59,3 +63,6 @@ def mask_temp_Atoms (input_pdb, scda, scdr, suffix, save_path):
                         outfile.write(line)
                     else:
                         outfile.write(line)
+
+# Test case - Uncomment below line
+#print(test_pdb)

@@ -1,3 +1,7 @@
+# Author - @Shashank Pritam - (shashankpritam@gmail.com).
+# License - LGPL
+# Required Modules -- numpy and biopython
+# Working Python Version --  3.8.10 and tested system -- WSL Ubuntu 20.4
 import Bio.PDB
 import glob
 import numpy as np
@@ -119,6 +123,7 @@ def neighbour_search(structure):
 # Pair of TRP - NE1 and Side Chain donor atoms are confirmed as the_NE1_atom and representative_atom.
 # Carves the segment of query pdb id for CLICK alignment.
                                     carve(structure, model, chain, residue, n_atom, neighbour_atoms)
+                                    print(structure, model, chain, residue, n_atom, neighbour_atoms)
                                     for dataset_file in all_dataset_pdb:
                                         # Very important - format of pdb file is dataset/XXYY.pdb, hence int(16)
                                         if len(dataset_file) == int(16): #and (dataset_file == "dataset/1gbq.pdb"):
@@ -126,8 +131,10 @@ def neighbour_search(structure):
                                             the_path = str(n_atom.get_full_id()[0])+"_"+str(n_atom.get_full_id()[1])+"_"+str(n_atom.get_full_id()[2])+"_"+str(the_NE1_atom.get_full_id()[3][1])+"_"+str(n_atom.get_full_id()[3][1])+"_"+str(n_atom.get_parent().get_resname()+"_"+n_atom.get_id()+"_"+str(dataset_file[-8:-4]))
 # Mask Template PDB atoms for CLICK alignment
                                             mask_temp_Atoms(dataset_file, str(n_atom.get_id()), str(n_atom.get_parent().get_resname()), "_rnmd_ds", the_path)
+                                            print(dataset_file, str(n_atom.get_id()), str(n_atom.get_parent().get_resname()), "_rnmd_ds", the_path)
 # Mask Query Segment atoms which was "Carved" for CLICK alignment
-                                            mask_query_Atoms (structure.get_id()+"__crvd__"+str(model.get_id())+chain.get_id()+str(residue.get_id()[1])+'_'+str(n_atom.get_parent().get_id()[1])+'_'+str(n_atom.get_id())+'.pdb', residue, n_atom.get_parent(), n_atom.get_id(), '__rnmd', the_path)
+                                            mask_query_Atoms(structure.get_id()+"__crvd__"+str(model.get_id())+chain.get_id()+str(residue.get_id()[1])+'_'+str(n_atom.get_parent().get_id()[1])+'_'+str(n_atom.get_id())+'.pdb', residue, n_atom.get_parent(), n_atom.get_id(), '__rnmd', the_path)
+                                            print(structure.get_id()+"__crvd__"+str(model.get_id())+chain.get_id()+str(residue.get_id()[1])+'_'+str(n_atom.get_parent().get_id()[1])+'_'+str(n_atom.get_id())+'.pdb', residue, n_atom.get_parent(), n_atom.get_id(), '__rnmd', the_path)
 
 
 # Calls the above function.
