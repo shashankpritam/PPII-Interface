@@ -142,7 +142,7 @@ def click4all(input_pdb1, input_pdb2):
     os.system(cmd)
 
 # Look for pair of TRP & NBR. Read neighhbor_look_up_4_pair_of_res for further information.
-#neighbour_search(input_structure)
+neighbour_search(input_structure)
 # CLICK folder is set.
 files_4_click = glob.glob(current_working_dir+"/click_output/*/", recursive = True)
 for folders in files_4_click:
@@ -151,7 +151,7 @@ for folders in files_4_click:
         dataset_renamed_file = glob.glob(folders+'/*_rnmd_ds.pdb')
 # Within all subfolder of this CLICK folder a pair of query PDB and Template PDB is present for all (TRP, NBR_Atom) for all template PDBs
 # Calls the function to structurally align these two PDBs
-        #click4all(renamed_pdb, dataset_renamed_file)
+        click4all(renamed_pdb, dataset_renamed_file)
 
 # The atoms are masked with these "masks only"
 click_atoms = ["AA", "BB", "CC", "NX", "EE"]
