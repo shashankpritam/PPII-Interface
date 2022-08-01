@@ -86,7 +86,11 @@ def neighbour_search(structure):
 # This checks if for any neighbour atom from the same chain, within 12 Angstrom except self, is side chain donor atom
 # and they don't have any internal hydrogen bond (if it is then put on the rejection_list).
 #                                iplus2 = (n_atom.get_serial_number())+2
-                                internal_look_up = neighbourhood_search.search(n_atom.coord, H_Bond_Cut_Off)
+
+# 2.5 Angstrom, THAT TOO WITHIN THE SAME CHAIN
+
+
+                                internal_look_up = neighbourhood_search.search(n_atom.coord, 2.5)
 # We are once again already iterating through internal_atoms. This is important - from the same residue - two scda might be considered!!
                                 for internal_atoms in internal_look_up:
                                     if (internal_atoms != n_atom):
@@ -100,7 +104,7 @@ def neighbour_search(structure):
                                             i_vector = internal_atoms.get_vector()
                                             i_aa_vector = i_aa_atom.get_vector()
                                             i_angle_hbond = (calc_angle(n_vector, i_vector, i_aa_vector))
-                                            if np.degrees(i_angle_hbond) >90.0 and np.degrees(i_angle_hbond)<180:
+                                            if np.degrees(i_angle_hbond) >90.0 and np.degrees(i_angle_hbond)<180 and n_atom.get_parent().get_parent().get_id() == internal_atoms.get_parent().get_parent().get_id():
                                                 rejection_list.append(n_atom)
                                         elif (internal_look_up_residue_id in donor and n_atom_id in acceptor):
                                             n_aa_atom = n_atom.get_parent()[acceptor_antecedent[n_atom_id]]
@@ -108,7 +112,7 @@ def neighbour_search(structure):
                                             i_vector = internal_atoms.get_vector()
                                             n_aa_vector = n_aa_atom.get_vector()
                                             n_angle_hbond = (calc_angle(i_vector, n_vector, n_aa_vector))
-                                            if np.degrees(n_angle_hbond) >90.0 and np.degrees(n_angle_hbond)<180:
+                                            if np.degrees(n_angle_hbond) >90.0 and np.degrees(n_angle_hbond)<180 and n_atom.get_parent().get_parent().get_id() == internal_atoms.get_parent().get_parent().get_id():
                                                 rejection_list.append(n_atom)
                                         else:
                                             continue

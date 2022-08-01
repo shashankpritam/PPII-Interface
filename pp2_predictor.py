@@ -142,7 +142,7 @@ def click4all(input_pdb1, input_pdb2):
     os.system(cmd)
 
 # Look for pair of TRP & NBR. Read neighhbor_look_up_4_pair_of_res for further information.
-neighbour_search(input_structure)
+#neighbour_search(input_structure)
 # CLICK folder is set.
 files_4_click = glob.glob(current_working_dir+"/click_output/*/", recursive = True)
 for folders in files_4_click:
@@ -171,11 +171,10 @@ for folders in files_4_click:
 # Which ones are the "passable" alignments
             if Matched_Atoms == 5:#RMSD <= 0.6 and
                 predicted_alignments.append(carved_frag_info+"_"+str(RMSD)+"_"+str(Structure_Overlap))
-                print(carved_frag_info)
 '''            elif Matched_Atoms == 5:#RMSD <= 1.0 and
                 predicted_alignments.append(carved_frag_info+"_"+str(RMSD)+"_"+str(Structure_Overlap))'''
 
-print(predicted_alignments)
+#print(predicted_alignments)
 # Among these passable alignments, remove the trivial self alignments. (eg - 1CKA vs 1CKA)
 list_of_unique_alignment = []
 for alignments in predicted_alignments:
