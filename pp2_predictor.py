@@ -15,29 +15,20 @@
 import sys
 import os
 import glob
-import shutil
 import stat
+import shutil
 import logging
-from pathlib import Path
 import numpy as np
 import Bio.PDB
 import warnings
-from numpy.linalg import norm
-from scipy.spatial.transform import Rotation as R
-from Bio.PDB.vectors import calc_angle
-from Bio.PDB import PDBIO, Select, PDBList
+from pathlib import Path
+from Bio.PDB import PDBIO, PDBList
 from Bio import BiopythonWarning
 warnings.simplefilter('ignore', BiopythonWarning)
 
-from modules.hydrogen_bonds import hbond_trp
-from modules.mask_temp_Atoms import mask_temp_Atoms
-from modules.mask_query_Atoms import mask_query_Atoms
 from modules.unmask_Atoms import unmask_Atoms_save
 from modules.save_pdb import save_pdb
-from modules.carve_pdb import carve
 from modules.trp_nbr_lookup import neighbour_search
-from modules.pep_simulation import decide_move
-
 
 
 # The parameter file param.txt file loads here, we get the current working directory, and the biopython parser is loaded.
@@ -56,7 +47,6 @@ logging.basicConfig(filename=LOG_FILENAME, level=logging.INFO)
 # Let the input command be as sys.argv[1]. Also please provide the PDB files in database_folder for database look-up.
 # In case of  running the script with each time query required - remove sys.argv[1] and uncomment the below line.
 input_pdb_given = sys.argv[1]  #input("Enter the four letter PDB code of Query Protein: ")
-pdbl = PDBList()
 print("Input PDB Given : "+input_pdb_given)
 #Provide Model of relevance here or define as input
 input_receptor_model = 0
@@ -142,7 +132,7 @@ def click4all(input_pdb1, input_pdb2):
     os.system(cmd)
 
 # Look for pair of TRP & NBR. Read neighhbor_look_up_4_pair_of_res for further information.
-#neighbour_search(input_structure)
+neighbour_search(input_structure)
 # CLICK folder is set.
 files_4_click = glob.glob(current_working_dir+"/click_output/*/", recursive = True)
 for folders in files_4_click:
@@ -182,7 +172,7 @@ for alignments in predicted_alignments:
     if (alignments[0]).casefold() != (alignments[8][-4:]).casefold():
         list_of_unique_alignment.append(alignments)
 
-
+list_of_unique_filtered_alignment = []
 
 # Code below replace the RMSD of CLICK with Total_RMSD = RMSD_TRP+RMSD_TRP_C+RMSD_TRP_O+RMSD_NBR_C
 for align in list_of_unique_alignment:
@@ -258,16 +248,21 @@ for align in list_of_unique_alignment:
                 Total_RMSD = RMSD_TRP+RMSD_NBR
                 Total_RMSD = "{:.2f}".format(Total_RMSD)
                 align_details = (align[0], align[4][0], align[4][1], align[4][2:], align[5], align[6], align[8][-4:])
-                score = "{:.2f}".format(float(Total_RMSD)+float(n_num/50))
-                print(Total_RMSD, "{:.2f}".format(RMSD_TRP), "{:.2f}".format(RMSD_NBR), score, n_num, align_details)
+                score = "{:.2f}".format(float(Total_RMSD)+float(n_num/150))
+                new_table_data = [align_query, Total_RMSD, "{:.2f}".format(RMSD_TRP), "{:.2f}".format(RMSD_NBR), score, n_num]
+                list_of_unique_filtered_alignment.append(new_table_data)
+                #print(Total_RMSD, "{:.2f}".format(RMSD_TRP), "{:.2f}".format(RMSD_NBR), score, n_num, align_details)
                 align[-2] = str(score)
 
+for items in sorted(list_of_unique_filtered_alignment, key = lambda x: (float(x[-2]), float(x[-4]))):
+    print(items)
 
+  
 # If no "unique" alignments are found reports and exists. Else continues with top alignment
-# as best alignment considered. The top alignment is selected based on RMSD and structural overlap (SO) acts as tie break up.
-if len(list_of_unique_alignment) != 0:
-    best_alignment = sorted(list_of_unique_alignment, key = lambda x: (float(x[-2]), -float(x[-1])))[0]
-    best_alignment_query = [best_alignment[0], best_alignment[4][0], best_alignment[4][1], best_alignment[4][2:], best_alignment[5], best_alignment[6], best_alignment[8][-4:]]
+# as best alignment considered. The top alignment is selected based on Score and RMSD(TRP) acts as tie break up.
+if len(list_of_unique_filtered_alignment) != 0:
+    best_alignment = sorted(list_of_unique_filtered_alignment, key = lambda x: (float(x[-2]), float(x[-4])))[0]
+    best_alignment_query = [best_alignment[0]]
 else:
     logging.info("No binding site found in the given query structure "+input_pdb)
     sys.exit("No binding site found in the given query structure")
@@ -278,8 +273,8 @@ if float(best_alignment[-2]) >= float(25000):
     sys.exit("No binding site found in the given query structure")
 
 
-print("For query structure", best_alignment[0], "predicted binding site details are - ", "Model =", best_alignment[4][0],  "Chain =", best_alignment[4][1], "TRP =", best_alignment[4][2:], "NBR =", best_alignment[5])
-print("Template PPII is", best_alignment[8][-4:],  "with a Score of", best_alignment[-2])
+print("For query structure", best_alignment[0][0], "predicted binding site details are - ", "Model =", best_alignment[0][1],  "Chain =", best_alignment[0][2], "TRP =", best_alignment[0][3], "NBR =", best_alignment[0][4])
+print("Template PPII is", best_alignment[0][6:],  "with a Score of", best_alignment[-2])
 
 # Reports alignment with least RMSD with "passable" overlap.
 #print("Best alignment details are - ", "PDB ID = ", best_alignment[8][-4:],  "RMSD = ", best_alignment[-2], "SO = ", best_alignment[-1])
@@ -287,36 +282,49 @@ print("Template PPII is", best_alignment[8][-4:],  "with a Score of", best_align
 
 #print(best_alignment)
 
+global predicted_receptor_structure
+global template_peptide_structure
 
 # The below function returns the predicted receptor chain from the query structure and best aligned PPII chain from the template PDBs.
-def run_sim_sim (input_pdb):
-    for folders in files_4_click:
-        if folders.startswith(current_working_dir+"/click_output/"+input_pdb_given.upper()) or folders.startswith(current_working_dir+"/click_output/"+input_pdb_given.lower()):
-            dataset_renamed_file = glob.glob(folders+'/*_rnmd.1.pdb')
-            renamed_pdb = glob.glob(folders+'/*_rnmd_ds.1.pdb')
-            click_file = glob.glob(folders+'/*.clique')
-            carved_frag_info = ((click_file[0]).split('/')[-1]).split("_")
-            #carved_frag_info.pop(5)
-            #print(folders)
-            carved_frag_info = [carved_frag_info[0], carved_frag_info[4][0], carved_frag_info[4][1], carved_frag_info[4][2:], carved_frag_info[5], carved_frag_info[6], carved_frag_info[8][5:9]]
-            #print(carved_frag_info, best_alignment_query)
-            if carved_frag_info == best_alignment_query:
-                receptor_chain = best_alignment[4][1]
-                peptide_chain = get_pep_chain(best_alignment[8][-4:])
-                unmask_Atoms_save(renamed_pdb[0], receptor_chain)
-                unmask_Atoms_save(dataset_renamed_file[0], peptide_chain)
-                renamed_pdb_unmask = renamed_pdb[0][:-4]+"_new.pdb"
-                dataset_renamed_file_unmask = dataset_renamed_file[0][:-4]+"_new.pdb"
-                save_pdb (renamed_pdb_unmask, best_alignment[0], receptor_chain)
-                save_pdb (dataset_renamed_file_unmask, best_alignment[8][-4:], peptide_chain)
-                predicted_receptor_structure = parser.get_structure(best_alignment[0], renamed_pdb_unmask)
-                template_peptide_structure = parser.get_structure((best_alignment[8][-4:]), dataset_renamed_file_unmask)
-    return (predicted_receptor_structure, receptor_chain, template_peptide_structure, peptide_chain)
+#def run_sim_sim (input_pdb):
+for folders in files_4_click:
+    if folders.startswith(current_working_dir+"/click_output/"+input_pdb_given.upper()) or folders.startswith(current_working_dir+"/click_output/"+input_pdb_given.lower()):
+        dataset_renamed_file = glob.glob(folders+'/*_rnmd.1.pdb')
+        renamed_pdb = glob.glob(folders+'/*_rnmd_ds.1.pdb')
+        click_file = glob.glob(folders+'/*.clique')
+        carved_frag_info = ((click_file[0]).split('/')[-1]).split("_")
+        #carved_frag_info.pop(5)
+        #print(folders)
+        carved_frag_info = [carved_frag_info[0], carved_frag_info[4][0], carved_frag_info[4][1], carved_frag_info[4][2:], carved_frag_info[5], carved_frag_info[6], carved_frag_info[8][5:9]]
+        if carved_frag_info == best_alignment_query[0]:
+            receptor_chain = best_alignment[0][2]
+            peptide_chain = get_pep_chain(best_alignment[0][6])
+            unmask_Atoms_save(renamed_pdb[0], receptor_chain)
+            unmask_Atoms_save(dataset_renamed_file[0], peptide_chain)
+            renamed_pdb_unmask = renamed_pdb[0][:-4]+"_new.pdb"
+            dataset_renamed_file_unmask = dataset_renamed_file[0][:-4]+"_new.pdb"
+            #print(receptor_chain, peptide_chain, renamed_pdb_unmask, dataset_renamed_file_unmask)
+            save_pdb (renamed_pdb_unmask, best_alignment[0][0], receptor_chain)
+            save_pdb (dataset_renamed_file_unmask, best_alignment[0][6], peptide_chain)
+            predicted_receptor_structure = parser.get_structure(best_alignment[0][0], renamed_pdb_unmask)
+            template_peptide_structure = parser.get_structure((best_alignment[0][6]), dataset_renamed_file_unmask)
+    #return (predicted_receptor_structure, receptor_chain, template_peptide_structure, peptide_chain)
 
 
 #run_sim_sim (input_pdb_given)
 
 
+input_receptor_chain_given = predicted_receptor_structure.get_id()
+input_peptide_chain_given = template_peptide_structure.get_id()
+
+input_receptor_chain = receptor_chain
+input_peptide_chain = peptide_chain
+
+
+
+input_receptor_structure = predicted_receptor_structure.get_id()
+input_peptide_structure = template_peptide_structure.get_id()
+'''
 # Below routines basically tidy ups the files for Monte-Carlo simulations
 # Add the predicted_receptor_structure and template_peptide_structure onto a single file.
 input_receptor_chain_given = run_sim_sim(input_pdb_given)[0].get_id()
@@ -331,11 +339,11 @@ input_receptor_structure = run_sim_sim(input_pdb_given)[0]
 input_peptide_structure = run_sim_sim(input_pdb_given)[2]
 
 
-#print("Receptor PDB ID : "+input_receptor_chain_given)
-#print("Peptide PDB ID : "+input_peptide_chain_given)
-#print(input_receptor_chain_given, input_receptor_chain, input_peptide_chain_given, input_peptide_chain)
+print("Receptor PDB ID : "+input_receptor_chain_given)
+print("Peptide PDB ID : "+input_peptide_chain_given)
+print(input_receptor_chain_given, input_receptor_chain, input_peptide_chain_given, input_peptide_chain)
 
-
+'''
 
 
 
@@ -358,6 +366,7 @@ for model_pep in pep_structure:
         chain_pep.id = 'Y'
         io.set_structure(pep_structure)
         io.save(input_peptide_chain_given+"__4merge.pdb")
+
 
 new_rec_structure = parser.get_structure(input_receptor_chain_given, input_receptor_chain_given+"__4merge.pdb")
 new_pep_structure = parser.get_structure(input_peptide_chain_given, input_peptide_chain_given+"__4merge.pdb")
@@ -386,7 +395,6 @@ os.remove(command5)
 os.remove(command7)
 os.remove(command8)
 
-
 # PDB for simulation is set.
 simulation_pdb = parser.get_structure(input_receptor_chain_given[0:4], input_receptor_chain_given+"__"+input_peptide_chain_given+"__4sim.pdb")
 # Monte Carlo Begins/Initializes here, comment the below line to just get the prediction site for ppii
@@ -395,14 +403,16 @@ simulation_pdb = parser.get_structure(input_receptor_chain_given[0:4], input_rec
 
 
 ##To create a single multi-model .pdb file - out_combined.pdb
-'''result_filename = current_working_dir+"/"+str(input_receptor_chain_given)+str("_sim_result.pdb")
+
+result_filename = current_working_dir+"/"+str(input_receptor_chain_given)+str("_sim_result.pdb")
 with open(result_filename, 'w+') as outfile:
     for files in glob.glob('pdb_traj_saved?.pdb'):
         with open(files) as file:
                 for line in file:
                     outfile.write(line)
-command12 = "sed -i 's/END/ENDMDL/g' "+ result_filename'''
+command12 = "sed -i 's/END/ENDMDL/g' "+ result_filename
 #os.system(command12)
+
 
 
 #Important Snippet
@@ -415,8 +425,8 @@ def remove_read_only_files(func, path, excinfo):
     os.chmod(path, stat.S_IWRITE)
     func(path)
 
-#shutil.rmtree(current_working_dir+"/click_output", onerror=remove_read_only_files)
-#Path(current_working_dir+"/click_output").mkdir(parents=True, exist_ok=True)
+shutil.rmtree(current_working_dir+"/click_output", onerror=remove_read_only_files)
+Path(current_working_dir+"/click_output").mkdir(parents=True, exist_ok=True)
 
 
 #---------------------------------------------------------------End of The Line --------------------------------------------------------

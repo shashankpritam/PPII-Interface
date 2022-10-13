@@ -90,7 +90,7 @@ def neighbour_search(structure):
 # 2.5 Angstrom, THAT TOO WITHIN THE SAME CHAIN
 
 
-                                internal_look_up = neighbourhood_search.search(n_atom.coord, 2.5)
+                                internal_look_up = neighbourhood_search.search(n_atom.coord, 3.5)
 # We are once again already iterating through internal_atoms. This is important - from the same residue - two scda might be considered!!
                                 for internal_atoms in internal_look_up:
                                     if (internal_atoms != n_atom):
