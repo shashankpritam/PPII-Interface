@@ -10,4 +10,4 @@
 
 ### New Example Result - (5C0D)[http://cospi.iiserpune.ac.in/click/output/25112022150002/25112022150002.html]
 
-### Comments/Suggestions required.
+### Please Comment/Suggest.
