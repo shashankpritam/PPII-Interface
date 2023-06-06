@@ -4,7 +4,7 @@
 #SBATCH --ntasks=1
 #SBATCH --time=4-00:00:00
 #SBATCH --mem=64000mb
-#SBATCH --job-name=validation5.1
+#SBATCH --job-name=pp2_validation
 #SBATCH --error=job.%A.err
 #SBATCH --output=job.%A.out
 
