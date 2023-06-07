@@ -30,6 +30,7 @@ warnings.simplefilter('ignore', BiopythonWarning)
 from modules.unmask_Atoms import unmask_Atoms_save
 from modules.save_pdb import save_pdb
 from modules.trp_nbr_lookup import neighbour_search
+from modules.pep_simulation import decide_move
 
 # Create the parser
 parser = argparse.ArgumentParser(description='Run the simulation.')
@@ -353,8 +354,11 @@ def run_simulation(input_pdb_given, run_monte_carlo_sim=False):
     os.remove(command7)
     os.remove(command8)
 
-    simulation_pdb = parser.get_structure(input_receptor_chain_given[0:4],
-                                          input_receptor_chain_given + "__" + input_peptide_chain_given + "__4sim.pdb")
+    # PDB for simulation is set.
+    simulation_pdb = parser.get_structure(input_receptor_chain_given[0:4], input_receptor_chain_given+"__"+input_peptide_chain_given+"__4sim.pdb")
+    # Monte Carlo Begins/Initializes here, comment the below line to just get the prediction site for ppii
+    # and avoid Monte Carlo
+    decide_move(simulation_pdb, 0, 0)
 
     result_filename = current_working_dir + "/" + str(input_receptor_chain_given) + str("_sim_result.pdb")
     with open(result_filename, 'w+') as outfile:
