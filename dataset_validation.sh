@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# SLURM job settings
 #SBATCH --cpus-per-task=4
 #SBATCH --ntasks=1
 #SBATCH --time=8-00:00:00
@@ -8,10 +9,8 @@
 #SBATCH --error=job.%A.err
 #SBATCH --output=job.%A.out
 
-# Defining the CSV headers
+# Define the CSV headers and output files
 CSV_HEADERS="PDB_ID,Model,Chain,TRP,NBR,Template_PPII,Score"
-
-# Output files
 OUTPUT_FILE="output.csv"
 BINDING_SITE_FILE="binding_site_output.csv"
 
@@ -26,13 +25,17 @@ TAIL_DATA_FILE=$(tail -n +2 $DATA_FILE)
 # Loop through each line of the data file
 while IFS= read -r pdb_id
 do
-  # Skip empty lines
+  # Only proceed for non-empty lines
   if [ "$pdb_id" != "" ]; then
-    # Run the Python script and save the output in a variable
+    # Log the start time
+    START_TIME=$(date +%s)
+
+    # Run the Python script and capture its output
     output=$(python3 pp2_predictor.py "$pdb_id")
-    
-    # If the output matches the expected pattern, extract information and write to the CSV files
+
+    # If the output matches the expected format, extract the details
     if [[ "$output" =~ (For query structure )([^,]+)(, predicted binding site details are - Model = )([^,]+)(, Chain = )([^,]+)(, TRP = )([^,]+)(, NBR = )([^,]+)(Template PPII is \\\[\\\')([^\'\\]]+)(\\\', with a Score of )([^$]+) ]]; then
+      # Extract data using regex group matches
       PDB_ID=${BASH_REMATCH[2]}
       Model=${BASH_REMATCH[4]}
       Chain=${BASH_REMATCH[6]}
@@ -44,9 +47,13 @@ do
       # Construct the CSV line
       CSV_LINE="$PDB_ID,$Model,$Chain,$TRP,$NBR,$Template_PPII,$Score"
       
-      # Write the CSV line to the output files
-      echo $CSV_LINE >> $OUTPUT_FILE
-      echo $CSV_LINE >> $BINDING_SITE_FILE
+      # Append the line to both output files
+      echo $CSV_LINE | tee -a $OUTPUT_FILE $BINDING_SITE_FILE
     fi
+
+    # Calculate and log the elapsed time
+    END_TIME=$(date +%s)
+    ELAPSED_TIME=$((END_TIME - START_TIME))
+    echo "Processing PDB ID $pdb_id took $ELAPSED_TIME seconds."
   fi
 done <<< "$TAIL_DATA_FILE"
