@@ -34,32 +34,6 @@ from modules.trp_nbr_lookup import neighbour_search
 from modules.pep_simulation import decide_move
 
 
-# Create the parser
-parser = argparse.ArgumentParser(description='This program analyzes a PDB structure to identify possible binding sites of the PPII helix along with the best PPII template.'
-                                 '\n Input: 4-letter PDB ID (e.g., 1CKA)'
-                                 '\n Output: If no binding site for PPII is found, a notification will be provided in the log file (pp2_pred_db_log.log).'
-                                 '\n         If a binding site is found, the program will generate a "CLICK" transferred PPII on the binding site,'
-                                 '\n         saved as 1CKA_best_template_model_pdb_4sim.pdb. Additionally, 1CKA_best_template_model_pdb_result.pdb'
-                                 '\n         will contain all the accepted snapshots of the Monte Carlo moves.'
-                                 '\n Author: Shashank Pritam (shashankpritam@gmail.com)'
-                                 '\n License: LGPL'
-                                 '\n Required Modules: numpy, scipy, modeller, and biopython'
-                                 '\n Python Version: 3.8.10'
-                                 '\n Tested on: WSL Ubuntu 20.4'
-                                 '\n Active internet connection is required if PDB files are not provided in the pp2pred folder (database_folder)', formatter_class=RawTextHelpFormatter)
-
-parser.add_argument('--PDB', required=True, help='Provide a 4-letter PDB ID.')
-parser.add_argument('--report_alignment', action='store_true', help='Whether to report the alignment.')
-parser.add_argument('--run_monte_carlo_sim', action='store_true', help='Whether to run Monte Carlo simulation.')
-
-# Parse the arguments
-args = parser.parse_args()
-
-
-
-
-
-
 
 # Load the parameter file (param.txt), get the current working directory, and initialize the Biopython parser.
 # Set up the log file.
@@ -79,6 +53,33 @@ input_pdb_given = sys.argv[1]  # input("Enter the four-letter PDB code of the qu
 print("Input PDB Given: " + input_pdb_given)
 # Provide the model of relevance here or define it as input.
 input_receptor_model = 0
+
+
+# Create the parser
+argument_parser = argparse.ArgumentParser(description='This program analyzes a PDB structure to identify possible binding sites of the PPII helix along with the best PPII template.'
+                                 '\n Input: 4-letter PDB ID (e.g., 1CKA)'
+                                 '\n Output: If no binding site for PPII is found, a notification will be provided in the log file (pp2_pred_db_log.log).'
+                                 '\n         If a binding site is found, the program will generate a "CLICK" transferred PPII on the binding site,'
+                                 '\n         saved as 1CKA_best_template_model_pdb_4sim.pdb. Additionally, 1CKA_best_template_model_pdb_result.pdb'
+                                 '\n         will contain all the accepted snapshots of the Monte Carlo moves.'
+                                 '\n Author: Shashank Pritam (shashankpritam@gmail.com)'
+                                 '\n License: LGPL'
+                                 '\n Required Modules: numpy, scipy, modeller, and biopython'
+                                 '\n Python Version: 3.8.10'
+                                 '\n Tested on: WSL Ubuntu 20.4'
+                                 '\n Active internet connection is required if PDB files are not provided in the pp2pred folder (database_folder)', 
+                                 formatter_class=RawTextHelpFormatter)
+
+
+argument_parser.add_argument('--report_alignment', action='store_true', help='Whether to report the alignment.')
+argument_parser.add_argument('--run_monte_carlo_sim', action='store_true', help='Whether to run Monte Carlo simulation.')
+argument_parser.add_argument('PDB', nargs='*', help='4-letter PDB ID (e.g., 1CKA)')
+
+
+# Parse the arguments
+args = argument_parser.parse_args()
+
+
 
 # Load the input PDB file using Biopython. If it is already present in the database_folder, it will be loaded instantly.
 # Otherwise, Biopython will download the PDB from the RCSB website and load it into the module.
