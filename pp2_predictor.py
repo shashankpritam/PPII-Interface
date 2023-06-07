@@ -18,6 +18,7 @@ import glob
 import stat
 import shutil
 import logging
+import argparse
 import numpy as np
 import Bio.PDB
 import warnings
@@ -30,6 +31,15 @@ from modules.unmask_Atoms import unmask_Atoms_save
 from modules.save_pdb import save_pdb
 from modules.trp_nbr_lookup import neighbour_search
 
+# Create the parser
+parser = argparse.ArgumentParser(description='Run the simulation.')
+
+# Add the arguments
+parser.add_argument('--report_alignment', action='store_true', help='Whether to report the alignment.')
+parser.add_argument('--run_monte_carlo_sim', action='store_true', help='Whether to run Monte Carlo simulation.')
+
+# Parse the arguments
+args = parser.parse_args()
 
 # Load the parameter file (param.txt), get the current working directory, and initialize the Biopython parser.
 # Set up the log file.
@@ -282,146 +292,93 @@ if float(best_alignment[-2]) >= float(25000):
 print(f"For query structure {best_alignment[0][0]}, predicted binding site details are - Model = {best_alignment[0][1]}, Chain = {best_alignment[0][2]}, TRP = {best_alignment[0][3]}, NBR = {best_alignment[0][4]}")
 print(f"Template PPII is {best_alignment[0][6:]}, with a Score of {best_alignment[-2]}")
 
-# Reports alignment with least RMSD with "passable" overlap.
-#print(f"Best alignment details are - PDB ID = {best_alignment[8][-4:]}, RMSD = {best_alignment[-2]}, SO = {best_alignment[-1]}")
-#print(f"{best_alignment[0]} {best_alignment[4][0]} {best_alignment[4][1]} {best_alignment[4][2:]}, {best_alignment[5]}, {best_alignment[8][-4:]}, {best_alignment[-2]}, {best_alignment[-1]}")
 
-#print(best_alignment)
-
-'''
-global predicted_receptor_structure
-global template_peptide_structure
-
-# The below function returns the predicted receptor chain from the query structure and best aligned PPII chain from the template PDBs.
-for folders in files_4_click:
-    if folders.startswith(f"{current_working_dir}/click_output/{input_pdb_given.upper()}") or folders.startswith(f"{current_working_dir}/click_output/{input_pdb_given.lower()}"):
-        dataset_renamed_file = glob.glob(f'{folders}/*_rnmd.1.pdb')
-        renamed_pdb = glob.glob(f'{folders}/*_rnmd_ds.1.pdb')
-        click_file = glob.glob(f'{folders}/*.clique')
-        carved_frag_info = click_file[0].split('/')[-1].split("_")
-        carved_frag_info = [carved_frag_info[0], carved_frag_info[4][0], carved_frag_info[4][1], carved_frag_info[4][2:], carved_frag_info[5], carved_frag_info[6], carved_frag_info[8][5:9]]
-        
-        if carved_frag_info == best_alignment_query[0]:
-            receptor_chain = best_alignment[0][2]
-            peptide_chain = get_pep_chain(best_alignment[0][6])
-            unmask_Atoms_save(renamed_pdb[0], receptor_chain)
-            unmask_Atoms_save(dataset_renamed_file[0], peptide_chain)
-            
-            renamed_pdb_unmask = f"{renamed_pdb[0][:-4]}_new.pdb"
-            dataset_renamed_file_unmask = f"{dataset_renamed_file[0][:-4]}_new.pdb"
-            
-            save_pdb(renamed_pdb_unmask, best_alignment[0][0], receptor_chain)
-            save_pdb(dataset_renamed_file_unmask, best_alignment[0][6], peptide_chain)
-            
-            predicted_receptor_structure = parser.get_structure(best_alignment[0][0], renamed_pdb_unmask)
-            template_peptide_structure = parser.get_structure(best_alignment[0][6], dataset_renamed_file_unmask)
-    #return (predicted_receptor_structure, receptor_chain, template_peptide_structure, peptide_chain)
+def report_alignment(best_alignment):
+    print(f"Best alignment details are - PDB ID = {best_alignment[8][-4:]}, RMSD = {best_alignment[-2]}, SO = {best_alignment[-1]}")
+    print(f"{best_alignment[0]} {best_alignment[4][0]} {best_alignment[4][1]} {best_alignment[4][2:]}, {best_alignment[5]}, {best_alignment[8][-4:]}, {best_alignment[-2]}, {best_alignment[-1]}")
+    print(best_alignment)
 
 
-#run_sim_sim (input_pdb_given)
+def run_simulation(input_pdb_given, run_monte_carlo_sim=False):
+    global predicted_receptor_structure
+    global template_peptide_structure
 
+    for folders in files_4_click:
+        if folders.startswith(f"{current_working_dir}/click_output/{input_pdb_given.upper()}") or folders.startswith(f"{current_working_dir}/click_output/{input_pdb_given.lower()}"):
+            dataset_renamed_file = glob.glob(f'{folders}/*_rnmd.1.pdb')
+            renamed_pdb = glob.glob(f'{folders}/*_rnmd_ds.1.pdb')
+            click_file = glob.glob(f'{folders}/*.clique')
+            carved_frag_info = click_file[0].split('/')[-1].split("_")
+            carved_frag_info = [carved_frag_info[0], carved_frag_info[4][0], carved_frag_info[4][1], carved_frag_info[4][2:], carved_frag_info[5], carved_frag_info[6], carved_frag_info[8][5:9]]
 
-input_receptor_chain_given = predicted_receptor_structure.get_id()
-input_peptide_chain_given = template_peptide_structure.get_id()
+            if carved_frag_info == best_alignment_query[0]:
+                receptor_chain = best_alignment[0][2]
+                peptide_chain = get_pep_chain(best_alignment[0][6])
+                unmask_Atoms_save(renamed_pdb[0], receptor_chain)
+                unmask_Atoms_save(dataset_renamed_file[0], peptide_chain)
 
-input_receptor_chain = receptor_chain
-input_peptide_chain = peptide_chain
+                renamed_pdb_unmask = f"{renamed_pdb[0][:-4]}_new.pdb"
+                dataset_renamed_file_unmask = f"{dataset_renamed_file[0][:-4]}_new.pdb"
 
+                save_pdb(renamed_pdb_unmask, best_alignment[0][0], receptor_chain)
+                save_pdb(dataset_renamed_file_unmask, best_alignment[0][6], peptide_chain)
 
+                predicted_receptor_structure = parser.get_structure(best_alignment[0][0], renamed_pdb_unmask)
+                template_peptide_structure = parser.get_structure(best_alignment[0][6], dataset_renamed_file_unmask)
 
-input_receptor_structure = predicted_receptor_structure.get_id()
-input_peptide_structure = template_peptide_structure.get_id()
+    input_receptor_chain_given = predicted_receptor_structure.get_id()
+    input_peptide_chain_given = template_peptide_structure.get_id()
 
-# Below routines basically tidy ups the files for Monte-Carlo simulations
-# Add the predicted_receptor_structure and template_peptide_structure onto a single file.
-input_receptor_chain_given = run_sim_sim(input_pdb_given)[0].get_id()
-input_peptide_chain_given = run_sim_sim(input_pdb_given)[2].get_id()
+    input_receptor_chain = receptor_chain
+    input_peptide_chain = peptide_chain
 
-input_receptor_chain = run_sim_sim(input_pdb_given)[1]
-input_peptide_chain = run_sim_sim(input_pdb_given)[3]
+    input_receptor_structure = predicted_receptor_structure.get_id()
+    input_peptide_structure = template_peptide_structure.get_id()
 
+    print("Receptor PDB ID : " + input_receptor_chain_given)
+    print("Peptide PDB ID : " + input_peptide_chain_given)
+    print(input_receptor_chain_given, input_receptor_chain, input_peptide_chain_given, input_peptide_chain)
 
+    rec_file = input_receptor_chain_given + "__4merge.pdb"
+    pep_file = input_peptide_chain_given + "__4merge.pdb"
+    combined_file = input_receptor_chain_given + "__" + input_peptide_chain_given + "__4sim.pdb"
 
-input_receptor_structure = run_sim_sim(input_pdb_given)[0]
-input_peptide_structure = run_sim_sim(input_pdb_given)[2]
+    command4 = input_receptor_chain_given + "__4merge.pdb"
+    command5 = input_peptide_chain_given + "__4merge.pdb"
+    command7 = input_receptor_chain_given + "_4sim.pdb"
+    command8 = input_peptide_chain_given + "_4sim.pdb"
+    # Remove the files
+    os.remove(command4)
+    os.remove(command5)
+    os.remove(command7)
+    os.remove(command8)
 
+    simulation_pdb = parser.get_structure(input_receptor_chain_given[0:4],
+                                          input_receptor_chain_given + "__" + input_peptide_chain_given + "__4sim.pdb")
 
-print("Receptor PDB ID : "+input_receptor_chain_given)
-print("Peptide PDB ID : "+input_peptide_chain_given)
-print(input_receptor_chain_given, input_receptor_chain, input_peptide_chain_given, input_peptide_chain)
-
-
-
-
-
-#io.set_structure(input_receptor_structure)
-#io.save(input_receptor_chain_given+"_receptor.pdb")
-#io.set_structure(input_peptide_structure)
-#io.save(input_peptide_chain_given+"_peptide.pdb")
-
-rec_structure = parser.get_structure(input_receptor_chain_given, input_receptor_chain_given+"_4sim.pdb")
-pep_structure = parser.get_structure(input_peptide_chain_given, input_peptide_chain_given+"_4sim.pdb")
-
-for model_rec in rec_structure:
-    for chain_rec in model_rec:
-        chain_rec.id = 'X'
-        io.set_structure(rec_structure)
-        io.save(input_receptor_chain_given+"__4merge.pdb")
-
-for model_pep in pep_structure:
-    for chain_pep in model_pep:
-        chain_pep.id = 'Y'
-        io.set_structure(pep_structure)
-        io.save(input_peptide_chain_given+"__4merge.pdb")
-
-
-new_rec_structure = parser.get_structure(input_receptor_chain_given, input_receptor_chain_given+"__4merge.pdb")
-new_pep_structure = parser.get_structure(input_peptide_chain_given, input_peptide_chain_given+"__4merge.pdb")
-
-rec_file = input_receptor_chain_given+"__4merge.pdb"
-pep_file = input_peptide_chain_given+"__4merge.pdb"
-
-combined_file = input_receptor_chain_given+"__"+input_peptide_chain_given+"__4sim.pdb"
-
-with open(combined_file, 'w') as outfile:
-    with open(rec_file) as rec_file:
-        for line in rec_file:
-            if not line.startswith('END'):
-                outfile.write(line)
-    with open(pep_file) as pep_file:
-            for line in pep_file:
-                outfile.write(line)
-
-command4 = input_receptor_chain_given+"__4merge.pdb"
-command5 = input_peptide_chain_given+"__4merge.pdb"
-command7 = input_receptor_chain_given+"_4sim.pdb"
-command8 = input_peptide_chain_given+"_4sim.pdb"
-# Remove the files
-os.remove(command4)
-os.remove(command5)
-os.remove(command7)
-os.remove(command8)
-
-# PDB for simulation is set.
-simulation_pdb = parser.get_structure(input_receptor_chain_given[0:4], input_receptor_chain_given+"__"+input_peptide_chain_given+"__4sim.pdb")
-# Monte Carlo Begins/Initializes here, comment the below line to just get the prediction site for ppii
-# and avoid Monte Carlo
-#decide_move(simulation_pdb, 0, 0)
-
-
-##To create a single multi-model .pdb file - out_combined.pdb
-
-result_filename = current_working_dir+"/"+str(input_receptor_chain_given)+str("_sim_result.pdb")
-with open(result_filename, 'w+') as outfile:
-    for files in glob.glob('pdb_traj_saved?.pdb'):
-        with open(files) as file:
+    result_filename = current_working_dir + "/" + str(input_receptor_chain_given) + str("_sim_result.pdb")
+    with open(result_filename, 'w+') as outfile:
+        for files in glob.glob('pdb_traj_saved?.pdb'):
+            with open(files) as file:
                 for line in file:
                     outfile.write(line)
-command12 = "sed -i 's/END/ENDMDL/g' "+ result_filename
-#os.system(command12)
+    command12 = "sed -i 's/END/ENDMDL/g' " + result_filename
+    os.system(command12)
 
 
-'''
+
+
+# Use the arguments
+if args.report_alignment:
+    report_alignment(best_alignment)
+
+if args.run_monte_carlo_sim:
+    run_simulation(args.input_pdb_given, run_monte_carlo_sim=True)
+else:
+    print("Skipping Monte Carlo simulation as per the provided flag")
+
+
+
 #Important Snippet
 #Remove All Residue Files - The Click Folder and MCMD PDBs
 all_dump = [i for i in glob.glob("*.pdb") if "__crvd__" in i or "pdb_traj" in i]
