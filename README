@@ -1,4 +1,4 @@
-# PPII Binding Site Predictor
+#PPII Binding Site Predictor
 
 This program analyzes a PDB structure to identify possible binding sites of the PPII helix along with the best PPII template.
 
