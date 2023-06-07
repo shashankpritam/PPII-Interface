@@ -1,4 +1,5 @@
-#PPII Binding Site Predictor
+
+# PPII Binding Site Predictor
 
 This program analyzes a PDB structure to identify possible binding sites of the PPII helix along with the best PPII template.
 
@@ -39,7 +40,7 @@ This project is licensed under the LGPL-2.1 License.
 4. Provide an input file `input_database.txt` with a list of 4-letter PDB IDs (e.g., `1CKA`) to analyze. One PDB ID per line.
 5. Execute the program by running the following command in the terminal:
 
-python3 script.py input_database.txt
+`python3 pp2_pred_for_database.py input_database.txt`
 
 6. The program will analyze each PDB ID in the input file and generate the following output:
    - If no binding site for PPII is found, a notification will be provided in the log file `pp2_pred_db_log.log`.
