@@ -7,7 +7,7 @@
 # Author: Shashank Pritam (shashankpritam@gmail.com)
 # License: LGPL
 
-# Required Modules: numpy, scipy, modeller10.4 and biopython
+# Required Modules: numpy, scipy, modeller and biopython
 # Python Version: 3.8.10
 # Tested on: WSL Ubuntu 20.4
 # Active internet connection is required if PDB files are not provided in the pp2pred folder (database_folder)
