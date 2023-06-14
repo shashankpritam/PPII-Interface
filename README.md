@@ -50,3 +50,5 @@ This project is licensed under the LGPL-2.1 License.
      The columns in the CSV files include: PDB_ID, Model, Chain, TRP, NBR, Template_PPII, and Score.
 
 For any help, please contact through the provided email ID.
+
+📝 Binder link - https://mybinder.org/v2/gh/shashankpritam/PPII-Interface/HEAD
