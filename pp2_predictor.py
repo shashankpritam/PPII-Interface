@@ -49,7 +49,7 @@ logging.basicConfig(filename=LOG_FILENAME, level=logging.INFO)
 # Input, Output, and Command Handling
 # If a database search is required, run pp2_pred_for_database.py and provide the query PDB ID in input_database.txt.
 # Set the input command as sys.argv[1]. Alternatively, remove sys.argv[1] and uncomment the line below for interactive input.
-input_pdb_given = sys.argv[1]  # input("Enter the four-letter PDB code of the query protein: ")
+input_pdb_given = sys.argv[1]  # input("Enter the four-letter PDB code of the query protein: ").upper()
 print("Input PDB Given: " + input_pdb_given)
 # Provide the model of relevance here or define it as input.
 input_receptor_model = 0
